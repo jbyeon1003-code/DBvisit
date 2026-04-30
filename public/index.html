@@ -17,16 +17,9 @@
       padding: 24px;
     }
 
-    .wrapper {
-      width: 100%;
-      max-width: 540px;
-    }
+    .wrapper { width: 100%; max-width: 540px; }
 
-    /* ── 헤더 ── */
-    .header {
-      text-align: center;
-      margin-bottom: 24px;
-    }
+    .header { text-align: center; margin-bottom: 24px; }
     .header .badge {
       display: inline-block;
       background: #1a56db;
@@ -39,30 +32,41 @@
       border-radius: 20px;
       margin-bottom: 12px;
     }
-    .header h1 {
-      font-size: 26px;
-      font-weight: 800;
-      color: #1e293b;
-      letter-spacing: -0.5px;
-    }
-    .header p {
-      margin-top: 6px;
-      font-size: 14px;
-      color: #64748b;
-    }
+    .header h1 { font-size: 26px; font-weight: 800; color: #1e293b; letter-spacing: -0.5px; }
+    .header p { margin-top: 6px; font-size: 14px; color: #64748b; }
 
-    /* ── 카드 ── */
-    .card {
-      background: #fff;
-      border-radius: 20px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
-      overflow: hidden;
+    .health-bar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: #94a3b8;
     }
+    .health-btn {
+      font-size: 11px;
+      color: #1a56db;
+      background: none;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 3px 10px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .health-btn:hover { background: #f1f5f9; }
+    .health-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      display: inline-block;
+    }
+    .health-dot.ok { background: #22c55e; }
+    .health-dot.error { background: #ef4444; }
 
-    .card-section {
-      padding: 24px 28px;
-      border-bottom: 1px solid #f1f5f9;
-    }
+    .card { background: #fff; border-radius: 20px; box-shadow: 0 4px 24px rgba(0,0,0,0.07); overflow: hidden; }
+
+    .card-section { padding: 24px 28px; border-bottom: 1px solid #f1f5f9; }
     .card-section:last-child { border-bottom: none; }
 
     .section-label {
@@ -72,21 +76,13 @@
       text-transform: uppercase;
       color: #94a3b8;
       margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    /* ── 날짜 입력 ── */
-    .date-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-    }
-    .field label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: #475569;
-      margin-bottom: 7px;
-    }
+    .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .field label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 7px; }
     .field input[type="date"] {
       width: 100%;
       padding: 11px 13px;
@@ -97,88 +93,87 @@
       color: #1e293b;
       background: #f8fafc;
       outline: none;
-      transition: border-color .18s, background .18s;
       cursor: pointer;
     }
-    .field input[type="date"]:focus {
-      border-color: #1a56db;
-      background: #fff;
-    }
 
-    /* ── 방문 정보 테이블 ── */
-    .info-grid {
-      display: grid;
-      gap: 8px;
+    .visitor-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+    .visitor-item {
+      display: flex; align-items: center; gap: 8px;
+      background: #f8fafc; padding: 10px; border-radius: 10px;
+      cursor: pointer; transition: background 0.2s; border: 1px solid transparent;
     }
+    .visitor-item:hover { background: #f1f5f9; }
+    .visitor-item input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+    .visitor-item span { font-size: 13px; font-weight: 600; color: #334155; }
+    .visitor-item.checked { background: #eff6ff; border-color: #3b82f6; }
+
+    .info-grid { display: grid; gap: 8px; }
     .info-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 9px 12px;
-      background: #f8fafc;
-      border-radius: 9px;
-      font-size: 13px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 12px; background: #f8fafc; border-radius: 9px; font-size: 13px;
     }
-    .info-key {
-      color: #94a3b8;
-      font-weight: 600;
-      flex-shrink: 0;
-      margin-right: 12px;
-    }
-    .info-val {
-      color: #334155;
-      font-weight: 600;
-      text-align: right;
-    }
+    .info-key { color: #94a3b8; font-weight: 600; }
+    .info-val { color: #334155; font-weight: 600; }
 
-    /* ── 버튼 ── */
-    .card-footer {
-      padding: 22px 28px 28px;
-    }
+    .card-footer { padding: 22px 28px 28px; }
     .btn-run {
-      width: 100%;
-      padding: 16px;
+      width: 100%; padding: 16px;
       background: linear-gradient(135deg, #1a56db 0%, #1040b8 100%);
-      color: #fff;
-      border: none;
-      border-radius: 13px;
-      font-size: 16px;
-      font-weight: 700;
-      font-family: inherit;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: opacity .15s, transform .12s;
-      letter-spacing: 0.2px;
+      color: #fff; border: none; border-radius: 13px;
+      font-size: 16px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
     }
-    .btn-run:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
-    .btn-run:active:not(:disabled) { opacity: 1; transform: translateY(0); }
-    .btn-run:disabled {
-      background: linear-gradient(135deg, #94a3b8, #7a8fa8);
-      cursor: not-allowed;
-      transform: none;
-    }
+    .btn-run:disabled { background: #94a3b8; cursor: not-allowed; }
 
-    /* ── 상태 메시지 ── */
-    .status {
-      margin-top: 14px;
-      padding: 13px 15px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 600;
-      line-height: 1.5;
+    /* 단계 진행 표시 */
+    .stage-bar {
       display: none;
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: #f8fafc;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #475569;
+    }
+    .stage-bar.show { display: flex; align-items: center; gap: 8px; }
+    .stage-label { font-weight: 600; color: #1a56db; }
+
+    .status {
+      margin-top: 10px; padding: 13px 15px; border-radius: 10px;
+      font-size: 13px; font-weight: 600; display: none;
     }
     .status.show { display: flex; align-items: flex-start; gap: 9px; }
     .status.loading { background: #eff6ff; color: #1d4ed8; }
     .status.success { background: #f0fdf4; color: #15803d; }
     .status.error   { background: #fff1f2; color: #be123c; }
 
-    .status-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    /* 오류 상세 토글 */
+    .error-detail-toggle {
+      display: none;
+      margin-top: 8px;
+      font-size: 11px;
+      color: #94a3b8;
+      cursor: pointer;
+      text-decoration: underline;
+      text-align: right;
+    }
+    .error-detail-toggle.show { display: block; }
+    .error-detail-box {
+      display: none;
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: #1e293b;
+      color: #94a3b8;
+      border-radius: 8px;
+      font-size: 11px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .error-detail-box.show { display: block; }
 
-    /* ── 스피너 ── */
     .spinner {
       width: 17px; height: 17px;
       border: 2.5px solid rgba(255,255,255,0.4);
@@ -189,31 +184,39 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── 안내 ── */
-    .note {
-      text-align: center;
-      font-size: 12px;
-      color: #94a3b8;
-      margin-top: 16px;
-      line-height: 1.6;
+    .select-all-btn { font-size: 11px; color: #1a56db; cursor: pointer; text-decoration: underline; }
+    .note { text-align: center; font-size: 12px; color: #94a3b8; margin-top: 16px; }
+
+    /* 스크린샷 */
+    #screenshotArea { margin-top: 24px; padding-top: 24px; border-top: 2px dashed #e2e8f0; }
+    #screenshotLabel { font-size: 11px; color: #94a3b8; margin-bottom: 10px; font-weight: 600; }
+    #screenshotImg {
+      width: 100%; border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      cursor: zoom-in;
     }
-    .note strong { color: #64748b; }
+    #screenshotImg.error-shot { border-color: #fca5a5; }
+    #screenshotNote { font-size: 11px; color: #94a3b8; margin-top: 10px; text-align: center; }
   </style>
 </head>
 <body>
 <div class="wrapper">
-
-  <!-- 헤더 -->
   <div class="header">
     <div class="badge">DBHitek IMS</div>
     <h1>방문 신청 자동화</h1>
-    <p>날짜를 선택하고 자동 입력을 시작하세요</p>
+    <p>정보를 선택하고 자동 입력을 시작하세요</p>
   </div>
 
-  <!-- 카드 -->
-  <div class="card">
+  <!-- Worker 상태 확인 -->
+  <div class="health-bar">
+    <span class="health-dot" id="healthDot"></span>
+    <span id="healthText">-</span>
+    <button class="health-btn" onclick="checkHealth()">Worker 상태 확인</button>
+  </div>
 
-    <!-- 날짜 선택 섹션 -->
+  <div class="card">
+    <!-- 날짜 선택 -->
     <div class="card-section">
       <div class="section-label">방문 기간 선택</div>
       <div class="date-row">
@@ -228,106 +231,217 @@
       </div>
     </div>
 
-    <!-- 자동 입력 정보 섹션 -->
+    <!-- 방문객 선택 -->
     <div class="card-section">
-      <div class="section-label">자동 입력될 정보</div>
+      <div class="section-label">
+        방문객 선택
+        <span class="select-all-btn" onclick="toggleAllVisitors()">전체 선택/해제</span>
+      </div>
+      <div class="visitor-grid" id="visitorGrid"></div>
+    </div>
+
+    <!-- 고정 정보 + 스크린샷 -->
+    <div class="card-section">
+      <div class="section-label">기본 입력 정보</div>
       <div class="info-grid">
-        <div class="info-row">
-          <span class="info-key">회사</span>
-          <span class="info-val">상우 캠퍼스</span>
-        </div>
-        <div class="info-row">
-          <span class="info-key">담당자</span>
-          <span class="info-val">채명주</span>
-        </div>
-        <div class="info-row">
-          <span class="info-key">출입지역</span>
-          <span class="info-val">상우캠퍼스 어드민동</span>
-        </div>
-        <div class="info-row">
-          <span class="info-key">방문목적</span>
-          <span class="info-val">업무협의</span>
-        </div>
-        <div class="info-row">
-          <span class="info-key">방문객</span>
-          <span class="info-val">변정호 · ASML</span>
-        </div>
-        <div class="info-row">
-          <span class="info-key">생년월일</span>
-          <span class="info-val">1990-08-12</span>
-        </div>
-        <div class="info-row">
-          <span class="info-key">연락처</span>
-          <span class="info-val">010-3802-0065</span>
-        </div>
+        <div class="info-row"><span class="info-key">담당자</span><span class="info-val">채명주</span></div>
+        <div class="info-row"><span class="info-key">소속</span><span class="info-val">ASML</span></div>
+        <div class="info-row"><span class="info-key">출입지역</span><span class="info-val">상우캠퍼스 어드민동</span></div>
+      </div>
+
+      <div id="screenshotArea" style="display: none;">
+        <p id="screenshotLabel">입력 결과 스크린샷</p>
+        <img id="screenshotImg" onclick="window.open(this.src)" title="클릭해서 크게 보기" />
+        <p id="screenshotNote">실제 신청 버튼은 눌리지 않았습니다. 위 화면에 정보가 잘 입력되었는지 확인하세요.</p>
       </div>
     </div>
 
-    <!-- 버튼 섹션 -->
     <div class="card-footer">
       <button class="btn-run" id="runBtn" onclick="runAuto()">
         <span id="btnIcon">🚀</span>
         <span id="btnText">자동 입력 시작</span>
       </button>
 
-      <!-- 상태 메시지 -->
+      <!-- 단계 진행 표시 -->
+      <div class="stage-bar" id="stageBar">
+        <span>진행 중:</span>
+        <span class="stage-label" id="stageLabel">-</span>
+      </div>
+
+      <!-- 결과 상태 -->
       <div class="status" id="status">
-        <span class="status-icon" id="statusIcon"></span>
+        <span id="statusIcon" style="flex-shrink:0"></span>
         <span id="statusMsg"></span>
       </div>
+
+      <!-- 오류 상세 (토글) -->
+      <div class="error-detail-toggle" id="detailToggle" onclick="toggleDetail()">▼ 오류 상세 보기</div>
+      <div class="error-detail-box" id="detailBox"></div>
     </div>
   </div>
-
-  <!-- 안내 문구 -->
-  <p class="note">
-    신청 버튼은 자동으로 누르지 않습니다.<br />
-    <strong>내용 확인 후 직접 눌러주세요.</strong>
-  </p>
-
+  <p class="note">내용 확인 후 신청 버튼은 직접 눌러주세요.</p>
 </div>
 
 <script>
-  // 오늘 날짜 기본값 설정
+  const visitorList = ["한준석", "최선국", "신영재", "이영훈", "강정규", "변정호", "김시준", "권이건", "장덕수", "백한빈", "박찬순"];
+
+  const grid = document.getElementById('visitorGrid');
+  visitorList.forEach(name => {
+    const div = document.createElement('div');
+    div.className = 'visitor-item';
+    div.onclick = () => {
+      const cb = div.querySelector('input');
+      cb.checked = !cb.checked;
+      div.classList.toggle('checked', cb.checked);
+    };
+    div.innerHTML = `<input type="checkbox" value="${name}" onclick="event.stopPropagation()"><span>${name}</span>`;
+    grid.appendChild(div);
+  });
+
+  function toggleAllVisitors() {
+    const items = document.querySelectorAll('.visitor-item');
+    const allChecked = Array.from(items).every(i => i.querySelector('input').checked);
+    items.forEach(div => {
+      const cb = div.querySelector('input');
+      cb.checked = !allChecked;
+      div.classList.toggle('checked', !allChecked);
+    });
+  }
+
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('startDate').value = today;
-  document.getElementById('endDate').value   = today;
+  document.getElementById('endDate').value = today;
+
+  // Worker 상태 확인
+  async function checkHealth() {
+    const dot = document.getElementById('healthDot');
+    const text = document.getElementById('healthText');
+    dot.className = 'health-dot';
+    text.textContent = '확인 중...';
+    try {
+      const res = await fetch('/health');
+      const data = await res.json();
+      const browserOk = data.browser_ok;
+      const assetsOk = data.assets_ok;
+      if (browserOk && assetsOk) {
+        dot.className = 'health-dot ok';
+        text.textContent = 'Worker 정상 (Browser: ✓, Assets: ✓)';
+      } else {
+        dot.className = 'health-dot error';
+        text.textContent = `Browser: ${browserOk ? '✓' : '✗'}  Assets: ${assetsOk ? '✓' : '✗'}`;
+      }
+    } catch (e) {
+      dot.className = 'health-dot error';
+      text.textContent = 'Worker 응답 없음';
+    }
+  }
+
+  function setStage(name) {
+    const bar = document.getElementById('stageBar');
+    if (name) {
+      bar.className = 'stage-bar show';
+      document.getElementById('stageLabel').textContent = name;
+    } else {
+      bar.className = 'stage-bar';
+    }
+  }
+
+  function showStatus(type, icon, msg) {
+    const el = document.getElementById('status');
+    el.className = 'status show ' + type;
+    document.getElementById('statusIcon').textContent = icon;
+    document.getElementById('statusMsg').textContent = msg;
+  }
+
+  function showErrorDetail(text) {
+    const toggle = document.getElementById('detailToggle');
+    const box = document.getElementById('detailBox');
+    box.textContent = text;
+    toggle.className = 'error-detail-toggle show';
+    toggle.textContent = '▼ 오류 상세 보기';
+    box.className = 'error-detail-box';
+  }
+
+  function hideErrorDetail() {
+    document.getElementById('detailToggle').className = 'error-detail-toggle';
+    document.getElementById('detailBox').className = 'error-detail-box';
+  }
+
+  function toggleDetail() {
+    const box = document.getElementById('detailBox');
+    const toggle = document.getElementById('detailToggle');
+    const open = box.classList.contains('show');
+    box.className = open ? 'error-detail-box' : 'error-detail-box show';
+    toggle.textContent = open ? '▼ 오류 상세 보기' : '▲ 오류 상세 닫기';
+  }
+
+  function showScreenshot(base64, isError) {
+    const area = document.getElementById('screenshotArea');
+    const img = document.getElementById('screenshotImg');
+    const label = document.getElementById('screenshotLabel');
+    const note = document.getElementById('screenshotNote');
+    img.src = 'data:image/jpeg;base64,' + base64;
+    img.className = isError ? 'error-shot' : '';
+    label.textContent = isError ? '실패 시점 스크린샷' : '입력 결과 스크린샷';
+    note.style.display = isError ? 'none' : 'block';
+    area.style.display = 'block';
+    setTimeout(() => area.scrollIntoView({ behavior: 'smooth' }), 100);
+  }
 
   async function runAuto() {
     const start = document.getElementById('startDate').value;
-    const end   = document.getElementById('endDate').value;
+    const end = document.getElementById('endDate').value;
+    const selectedVisitors = Array.from(document.querySelectorAll('.visitor-item input:checked')).map(cb => cb.value);
 
-    // 유효성 검사
-    if (!start || !end) {
-      showStatus('error', '⚠️', '날짜를 모두 선택해주세요.');
-      return;
-    }
-    if (start > end) {
-      showStatus('error', '⚠️', '종료일이 시작일보다 빠릅니다. 다시 확인해주세요.');
+    if (selectedVisitors.length === 0) {
+      showStatus('error', '⚠️', '방문객을 한 명 이상 선택해주세요.');
       return;
     }
 
-    // 버튼 로딩 상태
     const btn = document.getElementById('runBtn');
     btn.disabled = true;
+    document.getElementById('screenshotArea').style.display = 'none';
     document.getElementById('btnIcon').innerHTML = '<div class="spinner"></div>';
-    document.getElementById('btnText').textContent = '브라우저 실행 중...';
-    showStatus('loading', '⏳', `${start} ~ ${end} 으로 자동 입력 중입니다. 잠시 기다려주세요.`);
+    document.getElementById('btnText').textContent = '실행 중...';
+    hideErrorDetail();
+
+    const STAGES = ['브라우저 실행', '사이트 접속', '방문신청 버튼 클릭', '폼 입력', '스크린샷 촬영'];
+    let stageIdx = 0;
+    setStage(STAGES[0]);
+
+    // 단계 애니메이션 (실제 단계는 서버 응답으로 확인)
+    const stageTimer = setInterval(() => {
+      stageIdx = (stageIdx + 1) % STAGES.length;
+      setStage(STAGES[stageIdx]);
+    }, 4000);
+
+    showStatus('loading', '⏳', '가상 브라우저에서 자동 입력을 진행 중입니다. (약 10~30초 소요)');
 
     try {
-      const res  = await fetch('/run', {
+      const res = await fetch('/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ start, end }),
+        body: JSON.stringify({ start, end, visitors: selectedVisitors }),
       });
       const data = await res.json();
 
+      clearInterval(stageTimer);
+      setStage(null);
+
       if (data.ok) {
-        showStatus('success', '✅', '자동 입력 및 신청이 완료되었습니다.');
+        showStatus('success', '✅', `${selectedVisitors.length}명의 정보 입력 완료`);
+        if (data.screenshot) showScreenshot(data.screenshot, false);
       } else {
-        showStatus('error', '❌', '오류: ' + (data.error || '알 수 없는 오류가 발생했습니다.'));
+        const stagePart = data.stage ? `[${data.stage}] ` : '';
+        showStatus('error', '❌', `${stagePart}${data.error || '알 수 없는 오류'}`);
+        if (data.screenshot) showScreenshot(data.screenshot, true);
+        if (data.error) showErrorDetail(`단계: ${data.stage || '-'}\n오류: ${data.error}`);
       }
     } catch (e) {
+      clearInterval(stageTimer);
+      setStage(null);
       showStatus('error', '❌', '서버 통신 오류가 발생했습니다.');
+      showErrorDetail(`네트워크 오류: ${e.message}`);
     } finally {
       btn.disabled = false;
       document.getElementById('btnIcon').textContent = '🚀';
@@ -335,12 +449,8 @@
     }
   }
 
-  function showStatus(type, icon, msg) {
-    const el   = document.getElementById('status');
-    el.className = 'status show ' + type;
-    document.getElementById('statusIcon').textContent = icon;
-    document.getElementById('statusMsg').textContent  = msg;
-  }
+  // 페이지 로드 시 자동으로 Worker 상태 확인
+  checkHealth();
 </script>
 </body>
 </html>
