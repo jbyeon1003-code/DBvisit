@@ -157,6 +157,24 @@ async function takeScreenshot(page) {
   }
 }
 
+// 429 rate limit 시 최대 3회 재시도 (3s → 6s → 9s 대기)
+async function launchBrowser(myBrowser, onRetry) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      return await puppeteer.launch(myBrowser);
+    } catch (e) {
+      const is429 = e.message.includes('429') || e.message.includes('Rate limit');
+      if (is429 && attempt < 3) {
+        const wait = attempt * 3000;
+        if (onRetry) await onRetry(attempt, wait);
+        await new Promise(r => setTimeout(r, wait));
+      } else {
+        throw e;
+      }
+    }
+  }
+}
+
 function jsonRes(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -183,7 +201,7 @@ export default {
       let browser = null;
       let page = null;
       try {
-        browser = await puppeteer.launch(env.MY_BROWSER);
+        browser = await launchBrowser(env.MY_BROWSER);
         page = await browser.newPage();
         await page.setViewport({ width: 1280, height: 900 });
 
@@ -324,7 +342,9 @@ export default {
           stage = "브라우저 실행";
           await send(1, "브라우저를 실행하는 중...");
           if (!env.MY_BROWSER) throw new Error("MY_BROWSER 바인딩 없음");
-          browser = await puppeteer.launch(env.MY_BROWSER);
+          browser = await launchBrowser(env.MY_BROWSER, async (attempt, waitMs) => {
+            await send(1, `브라우저 사용량 초과 — ${waitMs / 1000}초 후 재시도 (${attempt}/3)...`);
+          });
           page = await browser.newPage();
           await page.setViewport({ width: 1280, height: 900 });
 
