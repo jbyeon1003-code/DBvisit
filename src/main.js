@@ -6,75 +6,118 @@ const INFO = {
   VISITOR_PHONE: "01038020065",
   VISITOR_COMPANY: "ASML",
   MANAGER_NAME: "채명주",
-  VISIT_AREA: "상우캠퍼스 어드민동",
-  VISIT_PURPOSE: "업무협의",
+  MANAGER_DEPT_KOR: "구매팀",
+  MANAGER_DEPT_ENG: "Procurement",
+  LOCATION_CODE: "3000",   // 3000 = DB HiTek Sangwoo Cam.
+  PLACE_CODE: "4 ",        // 4 = Sangwoo Admin (상우캠퍼스 어드민동)
+  PURPOSE_CODE: "0",       // 0 = Meeting
+  VISIT_START_HOUR: "9",
+  VISIT_START_MINUTE: "0",
+  VISIT_END_HOUR: "18",
+  VISIT_END_MINUTE: "0",
   TARGET_URL: "https://ims.dbhitek.com",
 };
 
 // esbuild가 번들링할 때 __name() 유틸리티를 주입하여 브라우저 컨텍스트에서 오류 발생.
 // page.evaluate(string) 방식은 번들러 변환 없이 브라우저에서 직접 실행되므로 안전.
+
+// Name[] 제외한 모든 폼 필드를 채우고 방문객 행을 추가함
 function buildFillFormScript(runtimeInfo) {
-  const infoJson = JSON.stringify(runtimeInfo);
+  const infoJson = JSON.stringify(runtimeInfo).replace(
+    /[^\x00-\x7F]/g,
+    c => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")
+  );
   return `(async () => {
     const info = ${infoJson};
     try {
-      const cbs = document.querySelectorAll('input[type="checkbox"]');
-      cbs.forEach(cb => { if (!cb.checked) cb.click(); });
+      document.querySelectorAll('input[name="ckAgree1"], input[name="ckAgree2"]')
+        .forEach(cb => { if (!cb.checked) cb.click(); });
 
-      const nextBtn = Array.from(document.querySelectorAll('button, a')).find(b =>
-        b.innerText && ['확인', '동의', '다음'].some(t => b.innerText.includes(t))
-      );
-      if (nextBtn) {
-        nextBtn.click();
-        await new Promise(r => setTimeout(r, 2000));
-      }
-
-      const fill = (keywords, value, parent) => {
-        const root = parent || document;
-        const inputs = Array.from(root.querySelectorAll('input, select, textarea'));
-        const target = inputs.find(i => {
-          const text = ((i.id || '') + (i.name || '') + (i.placeholder || '')).toLowerCase();
-          return keywords.some(k => text.includes(k.toLowerCase()));
-        });
-        if (!target) return false;
-        if (target.tagName === 'SELECT') {
-          const opt = Array.from(target.options).find(o => o.text.includes(value));
-          if (opt) target.value = opt.value;
-        } else {
-          target.value = value;
-        }
+      function setVal(el, value) {
+        if (!el) return false;
+        try {
+          const proto = el.tagName === 'SELECT'
+            ? window.HTMLSelectElement.prototype
+            : el.tagName === 'TEXTAREA'
+              ? window.HTMLTextAreaElement.prototype
+              : window.HTMLInputElement.prototype;
+          const descriptor = Object.getOwnPropertyDescriptor(proto, 'value');
+          if (descriptor && descriptor.set) descriptor.set.call(el, value);
+          else el.value = value;
+        } catch (_) { el.value = value; }
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
         return true;
-      };
-
-      fill(['담당자', 'manager'], info.MANAGER_NAME, null);
-      fill(['지역', 'area'], info.VISIT_AREA, null);
-      fill(['목적', 'purpose'], info.VISIT_PURPOSE, null);
-      fill(['회사', 'company'], info.VISITOR_COMPANY, null);
-
-      for (let i = 0; i < info.VISITORS.length; i++) {
-        const visitorName = info.VISITORS[i];
-        if (i > 0) {
-          const addBtn = Array.from(document.querySelectorAll('button, a')).find(b =>
-            b.innerText && (b.innerText.trim() === '+' || b.innerText.includes('방문객 추가'))
-          );
-          if (addBtn) {
-            addBtn.click();
-            await new Promise(r => setTimeout(r, 800));
-          }
-        }
-        const rows = document.querySelectorAll('tr, .visitor-row');
-        const currentRow = rows.length > 0 ? rows[rows.length - 1] : null;
-        fill(['이름', 'name'], visitorName, currentRow);
-        fill(['생년월일', 'birth'], info.VISITOR_BIRTH, currentRow);
-        fill(['연락처', 'phone'], info.VISITOR_PHONE, currentRow);
-        fill(['소속', 'company'], info.VISITOR_COMPANY, currentRow);
       }
-      return { success: true, error: null };
+
+      function qs(name) {
+        return Array.from(document.querySelectorAll('input, select, textarea'))
+          .find(el => el.name === name) || null;
+      }
+      function qsAll(name) {
+        return Array.from(document.querySelectorAll('input, select, textarea'))
+          .filter(el => el.name === name);
+      }
+
+      setVal(qs('Location'), info.LOCATION_CODE);
+      await new Promise(r => setTimeout(r, 800));
+      setVal(qs('PlaceCodeID'), info.PLACE_CODE);
+      setVal(qs('ContactName'), info.MANAGER_NAME);
+      setVal(qs('ContactOrgNameKor'), info.MANAGER_DEPT_KOR);
+      setVal(qs('ContactOrgNameEng'), info.MANAGER_DEPT_ENG);
+      setVal(qs('VisitStartDate'), info.VISIT_START_DATE);
+      setVal(qs('VisitStartDateHour'), info.VISIT_START_HOUR);
+      setVal(qs('VisitStartDateMinute'), info.VISIT_START_MINUTE);
+      setVal(qs('VisitEndDate'), info.VISIT_END_DATE);
+      setVal(qs('VisitEndDateHour'), info.VISIT_END_HOUR);
+      setVal(qs('VisitEndDateMinute'), info.VISIT_END_MINUTE);
+      setVal(qs('VisitPurposeCodeID'), info.PURPOSE_CODE);
+
+      // 방문객 행 먼저 모두 추가
+      for (let i = 1; i < info.VISITORS.length; i++) {
+        const addBtn = Array.from(document.querySelectorAll('button, a')).find(b => {
+          const t = (b.innerText || '').trim();
+          return t === 'Add Visitor' || t === '방문객 추가' || t === '방문객추가';
+        });
+        if (addBtn) { addBtn.click(); await new Promise(r => setTimeout(r, 600)); }
+      }
+
+      // Name[] 제외한 방문객 필드 채우기
+      const birthInputs   = qsAll('BirthDate[]');
+      const mobileInputs  = qsAll('Mobile[]');
+      const companyInputs = qsAll('CompanyName[]');
+      for (let i = 0; i < info.VISITORS.length; i++) {
+        setVal(birthInputs[i],   info.VISITOR_BIRTH);
+        setVal(mobileInputs[i],  info.VISITOR_PHONE);
+        setVal(companyInputs[i], info.VISITOR_COMPANY);
+      }
+
+      return { success: true, error: null, rowCount: qsAll('Name[]').length };
     } catch (e) {
       return { success: false, error: e.message };
     }
   })()`;
 }
+
+// Name[] 필드에 이름 설정: 네이티브 setter로 DOM 값 직접 세팅
+// \uXXXX 이스케이프 대신 한글 리터럴을 스크립트에 직접 삽입 (Worker 내부 INFO.VISITORS에서 온 값)
+// 이벤트 미발생 — React onChange가 한글을 깨뜨리므로
+function buildFillNamesScript(visitors) {
+  function jsStr(s) {
+    return '"' + s.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n") + '"';
+  }
+  const visitorLiterals = "[" + visitors.map(jsStr).join(", ") + "]";
+  return `(() => {
+    const visitors = ${visitorLiterals};
+    const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+    const nameInputs = Array.from(document.querySelectorAll('input, select, textarea'))
+      .filter(el => el.name === 'Name[]');
+    for (let i = 0; i < visitors.length; i++) {
+      if (nameInputs[i]) nativeSetter.set.call(nameInputs[i], visitors[i]);
+    }
+  })()`;
+}
+
 
 async function takeScreenshot(page) {
   try {
@@ -116,6 +159,113 @@ export default {
       });
     }
 
+    // ── /debug: 단계별 스크린샷으로 봇이 보는 화면 확인 ─────────────
+    if (path === "/debug") {
+      let browser = null;
+      let page = null;
+      try {
+        browser = await puppeteer.launch(env.MY_BROWSER);
+        page = await browser.newPage();
+        await page.setViewport({ width: 1280, height: 900 });
+
+        // 1) 초기 페이지
+        await page.goto(INFO.TARGET_URL, { waitUntil: "networkidle0", timeout: 20000 });
+        await page.waitForTimeout(1500);
+        const shot1 = await takeScreenshot(page);
+
+        // 2) "Apply Visit" / "방문신청" 정확한 텍스트 매칭으로 클릭
+        const clickResult = await page.evaluate(`(() => {
+          const btn = Array.from(document.querySelectorAll('button, a')).find(b => {
+            const t = (b.innerText || '').trim();
+            return t === '방문신청' || t === 'Apply Visit';
+          });
+          if (btn) {
+            btn.scrollIntoView({ behavior: 'instant', block: 'center' });
+            btn.click();
+            return { clicked: true, text: btn.innerText.trim(), tag: btn.tagName };
+          }
+          const candidates = Array.from(document.querySelectorAll('button, a'))
+            .map(b => (b.innerText || '').trim())
+            .filter(t => t.length > 0 && t.length < 60);
+          return { clicked: false, candidates };
+        })()`);
+
+        await page.waitForTimeout(2500);
+        const shot2 = await takeScreenshot(page);
+        const url2 = page.url();
+
+        // 클릭 후 표시된 input/select 필드 (hidden 제외)
+        const visibleInputs = await page.evaluate(`(() =>
+          Array.from(document.querySelectorAll('input:not([type=hidden]), select, textarea'))
+            .filter(i => {
+              const r = i.getBoundingClientRect();
+              return r.width > 0 && r.height > 0;
+            })
+            .map(i => ({
+              tag: i.tagName, type: i.type, id: i.id,
+              name: i.name, placeholder: i.placeholder,
+              options: i.tagName === 'SELECT'
+                ? Array.from(i.options).map(o => ({ val: o.value, text: o.text.trim() })).slice(0, 15)
+                : undefined
+            }))
+        )()`);
+
+        // 2b) Location을 3000(상우캠퍼스)로 변경 후 PlaceCodeID 옵션 확인
+        const placeOptionsAfterSangwoo = await page.evaluate(`(() => {
+          const loc = document.querySelector('[name="Location"]');
+          if (!loc) return { error: 'Location select not found' };
+          loc.value = '3000';
+          loc.dispatchEvent(new Event('change', { bubbles: true }));
+          return { locationSet: true };
+        })()`);
+        await page.waitForTimeout(1500);
+        const sangwooPlaceOptions = await page.evaluate(`(() => {
+          const sel = document.querySelector('[name="PlaceCodeID"]');
+          if (!sel) return [];
+          return Array.from(sel.options).map(o => ({ val: o.value, text: o.text.trim() }));
+        })()`);
+
+        // 3) "Add Visitor" 클릭 → 방문객 행 필드 확인
+        const addVisitorResult = await page.evaluate(`(() => {
+          const btn = Array.from(document.querySelectorAll('button, a')).find(b => {
+            const t = (b.innerText || '').trim();
+            return t === 'Add Visitor' || t === '방문객 추가' || t === '방문객추가';
+          });
+          if (btn) { btn.click(); return true; }
+          return false;
+        })()`);
+
+        await page.waitForTimeout(1500);
+        const shot3 = await takeScreenshot(page);
+
+        const visitorFields = await page.evaluate(`(() =>
+          Array.from(document.querySelectorAll('input:not([type=hidden]), select, textarea'))
+            .filter(i => {
+              const r = i.getBoundingClientRect();
+              return r.width > 0 && r.height > 0;
+            })
+            .map(i => ({
+              tag: i.tagName, type: i.type, id: i.id,
+              name: i.name, placeholder: i.placeholder,
+              options: i.tagName === 'SELECT'
+                ? Array.from(i.options).map(o => ({ val: o.value, text: o.text.trim() })).slice(0, 10)
+                : undefined
+            }))
+        )()`);
+
+        await browser.close();
+        return jsonRes({
+          step1_initial: { screenshot: shot1 },
+          step2_after_apply_visit: { url: url2, clickResult, visibleInputs, screenshot: shot2 },
+          step2b_sangwoo_place_options: { placeOptionsAfterSangwoo, sangwooPlaceOptions },
+          step3_after_add_visitor: { addVisitorClicked: addVisitorResult, visitorFields, screenshot: shot3 },
+        });
+      } catch (e) {
+        if (browser) try { await browser.close(); } catch {}
+        return jsonRes({ error: `${e.constructor.name}: ${e.message}` });
+      }
+    }
+
     // ── /run ─────────────────────────────────────────────────────
     if (path === "/run" && request.method === "POST") {
       let browser = null;
@@ -126,13 +276,23 @@ export default {
         // 1단계: 요청 파싱
         stage = "요청 데이터 파싱";
         const body = await request.json();
-        const { start: startDate, end: endDate, visitors: selectedVisitors = [] } = body;
+        const { start: startDate, end: rawEndDate, visitorIndices } = body;
 
-        if (!startDate || !endDate) {
-          return jsonRes({ ok: false, stage, error: "날짜 정보가 누락되었습니다.", screenshot: null });
+        if (!startDate) {
+          return jsonRes({ ok: false, stage, error: "방문시작일이 누락되었습니다.", screenshot: null });
         }
+
+        // 종료일 미지정 또는 시작일보다 이른 경우 시작일로 자동 설정
+        const endDate = rawEndDate && rawEndDate >= startDate ? rawEndDate : startDate;
+
+        // visitorIndices: 숫자 배열로 INFO.VISITORS에서 선택 (인코딩 문제 없이 한글 사용)
+        // 미지정 시 전체 방문객 사용
+        const selectedVisitors = Array.isArray(visitorIndices) && visitorIndices.length > 0
+          ? visitorIndices.map(i => INFO.VISITORS[i]).filter(Boolean)
+          : INFO.VISITORS;
+
         if (selectedVisitors.length === 0) {
-          return jsonRes({ ok: false, stage, error: "선택된 방문객이 없습니다.", screenshot: null });
+          return jsonRes({ ok: false, stage, error: "유효한 방문객 인덱스가 없습니다.", screenshot: null });
         }
 
         // 2단계: 브라우저 실행
@@ -154,29 +314,31 @@ export default {
         console.log(`[DEBUG] Page: ${pageUrl} | ${pageTitle}`);
         let screenshotB64 = await takeScreenshot(page);
 
-        // 4단계: 방문신청 버튼 클릭
+        // 4단계: 방문신청 버튼 클릭 (정확한 텍스트 매칭)
         stage = "방문신청 버튼 클릭";
-        const clicked = await page.evaluate(() => {
-          const btn = Array.from(document.querySelectorAll("button, a"))
-            .find(b => b.innerText && b.innerText.includes("방문신청"));
-          if (btn) { btn.click(); return true; }
+        const clicked = await page.evaluate(`(() => {
+          const btn = Array.from(document.querySelectorAll('button, a')).find(b => {
+            const t = (b.innerText || '').trim();
+            return t === '방문신청' || t === 'Apply Visit';
+          });
+          if (btn) { btn.scrollIntoView({ behavior: 'instant', block: 'center' }); btn.click(); return true; }
           return false;
-        });
+        })()`);
 
         if (!clicked) {
           screenshotB64 = await takeScreenshot(page);
-          const buttons = await page.evaluate(() =>
-            Array.from(document.querySelectorAll("button, a"))
-              .map(b => (b.innerText || "").trim())
+          const buttons = await page.evaluate(`(() =>
+            Array.from(document.querySelectorAll('button, a'))
+              .map(b => (b.innerText || '').trim())
               .filter(t => t.length > 0 && t.length < 30)
               .slice(0, 25)
-          );
+          )()`);
           await browser.close();
           browser = null;
           return jsonRes({
             ok: false,
             stage,
-            error: `'방문신청' 버튼 미발견\n현재 URL: ${pageUrl}\n감지된 버튼: ${JSON.stringify(buttons)}`,
+            error: `'방문신청'/'Apply Visit' 버튼 미발견\n현재 URL: ${pageUrl}\n감지된 버튼: ${JSON.stringify(buttons)}`,
             screenshot: screenshotB64,
           });
         }
@@ -187,21 +349,52 @@ export default {
         // 5단계: 폼 입력
         stage = "폼 입력";
         console.log(`[DEBUG] Filling form for ${selectedVisitors.length} visitors`);
-        const runtimeInfo = { ...INFO, VISITORS: selectedVisitors };
+        const runtimeInfo = {
+          ...INFO,
+          VISITORS: selectedVisitors,
+          VISIT_START_DATE: startDate,
+          VISIT_END_DATE: endDate,
+        };
         const result = await page.evaluate(buildFillFormScript(runtimeInfo));
+        if (!result.success) {
+          screenshotB64 = await takeScreenshot(page);
+          await browser.close(); browser = null;
+          return jsonRes({ ok: false, stage, error: result.error, screenshot: screenshotB64 });
+        }
 
-        // 6단계: 최종 스크린샷
+        // 5b단계: Name[] 한글 입력 — 네이티브 setter로 직접 설정 (이벤트 없음)
+        stage = "이름 입력";
+        await page.evaluate(buildFillNamesScript(selectedVisitors));
+
+        // 6단계: 폼 필드 값 검증 + 최종 스크린샷
         stage = "스크린샷 촬영";
+        const formState = await page.evaluate(`(() => {
+          const all = Array.from(document.querySelectorAll('input, select, textarea'));
+          const get = name => { const el = all.find(e => e.name === name); return el ? el.value : null; };
+          const getAll = name => all.filter(e => e.name === name).map(e => e.value);
+          return {
+            Location: get('Location'),
+            PlaceCodeID: get('PlaceCodeID'),
+            ContactName: get('ContactName'),
+            VisitStartDate: get('VisitStartDate'),
+            VisitEndDate: get('VisitEndDate'),
+            VisitPurposeCodeID: get('VisitPurposeCodeID'),
+            Names: getAll('Name[]'),
+            BirthDates: getAll('BirthDate[]'),
+            Mobiles: getAll('Mobile[]'),
+            Companies: getAll('CompanyName[]'),
+          };
+        })()`);
         screenshotB64 = await takeScreenshot(page);
 
         await browser.close();
         browser = null;
 
-        console.log(`[DEBUG] Form fill result: success=${result.success}, error=${result.error}`);
         return jsonRes({
-          ok: result.success,
-          stage: result.success ? "완료" : "폼 입력",
-          error: result.error ?? null,
+          ok: true,
+          stage: "완료",
+          error: null,
+          formState,
           screenshot: screenshotB64,
         });
 
