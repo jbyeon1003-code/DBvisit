@@ -282,149 +282,119 @@ export default {
 
     // ── /run ─────────────────────────────────────────────────────
     if (path === "/run" && request.method === "POST") {
-      let browser = null;
-      let page = null;
-      let stage = "초기화";
+      const body = await request.json();
+      const { start: startDate, end: rawEndDate, visitorIndices } = body;
 
-      try {
-        // 1단계: 요청 파싱
-        stage = "요청 데이터 파싱";
-        const body = await request.json();
-        const { start: startDate, end: rawEndDate, visitorIndices } = body;
-
-        if (!startDate) {
-          return jsonRes({ ok: false, stage, error: "방문시작일이 누락되었습니다.", screenshot: null });
-        }
-
-        // 종료일 미지정 또는 시작일보다 이른 경우 시작일로 자동 설정
-        const endDate = rawEndDate && rawEndDate >= startDate ? rawEndDate : startDate;
-
-        // visitorIndices: 숫자 배열로 INFO.VISITORS에서 선택 (인코딩 문제 없이 한글 사용)
-        // 미지정 시 전체 방문객 사용
-        const selectedVisitors = Array.isArray(visitorIndices) && visitorIndices.length > 0
-          ? visitorIndices.map(i => INFO.VISITORS[i]).filter(Boolean)
-          : INFO.VISITORS;
-
-        if (selectedVisitors.length === 0) {
-          return jsonRes({ ok: false, stage, error: "유효한 방문객 인덱스가 없습니다.", screenshot: null });
-        }
-
-        // 2단계: 브라우저 실행
-        stage = "브라우저 실행";
-        if (!env.MY_BROWSER) {
-          return jsonRes({ ok: false, stage, error: "MY_BROWSER 바인딩 없음.", screenshot: null });
-        }
-        browser = await puppeteer.launch(env.MY_BROWSER);
-        page = await browser.newPage();
-
-        // 3단계: 사이트 접속
-        stage = "사이트 접속";
-        console.log(`[DEBUG] Navigating to ${INFO.TARGET_URL}`);
-        await page.goto(INFO.TARGET_URL, { waitUntil: "networkidle0", timeout: 20000 });
-        await page.waitForTimeout(1000);
-
-        const pageUrl = page.url();
-        const pageTitle = await page.title();
-        console.log(`[DEBUG] Page: ${pageUrl} | ${pageTitle}`);
-        let screenshotB64 = await takeScreenshot(page);
-
-        // 4단계: 방문신청 버튼 클릭 (정확한 텍스트 매칭)
-        stage = "방문신청 버튼 클릭";
-        const clicked = await page.evaluate(`(() => {
-          const btn = Array.from(document.querySelectorAll('button, a')).find(b => {
-            const t = (b.innerText || '').trim();
-            return t === '방문신청' || t === 'Apply Visit';
-          });
-          if (btn) { btn.scrollIntoView({ behavior: 'instant', block: 'center' }); btn.click(); return true; }
-          return false;
-        })()`);
-
-        if (!clicked) {
-          screenshotB64 = await takeScreenshot(page);
-          const buttons = await page.evaluate(`(() =>
-            Array.from(document.querySelectorAll('button, a'))
-              .map(b => (b.innerText || '').trim())
-              .filter(t => t.length > 0 && t.length < 30)
-              .slice(0, 25)
-          )()`);
-          await browser.close();
-          browser = null;
-          return jsonRes({
-            ok: false,
-            stage,
-            error: `'방문신청'/'Apply Visit' 버튼 미발견\n현재 URL: ${pageUrl}\n감지된 버튼: ${JSON.stringify(buttons)}`,
-            screenshot: screenshotB64,
-          });
-        }
-
-        await page.waitForTimeout(3000);
-        screenshotB64 = await takeScreenshot(page);
-
-        // 5단계: 폼 입력
-        stage = "폼 입력";
-        console.log(`[DEBUG] Filling form for ${selectedVisitors.length} visitors`);
-        const runtimeInfo = {
-          ...INFO,
-          VISITORS: selectedVisitors,
-          VISIT_START_DATE: startDate,
-          VISIT_END_DATE: endDate,
-        };
-        const result = await page.evaluate(buildFillFormScript(runtimeInfo));
-        if (!result.success) {
-          screenshotB64 = await takeScreenshot(page);
-          await browser.close(); browser = null;
-          return jsonRes({ ok: false, stage, error: result.error, screenshot: screenshotB64 });
-        }
-
-        // 5b단계: Name[] 한글 입력 — 네이티브 setter로 직접 설정 (이벤트 없음)
-        stage = "이름 입력";
-        await page.evaluate(buildFillNamesScript(selectedVisitors.map(v => v.name)));
-
-        // 6단계: 폼 필드 값 검증 + 최종 스크린샷
-        stage = "스크린샷 촬영";
-        const formState = await page.evaluate(`(() => {
-          const all = Array.from(document.querySelectorAll('input, select, textarea'));
-          const get = name => { const el = all.find(e => e.name === name); return el ? el.value : null; };
-          const getAll = name => all.filter(e => e.name === name).map(e => e.value);
-          return {
-            Location: get('Location'),
-            PlaceCodeID: get('PlaceCodeID'),
-            ContactName: get('ContactName'),
-            VisitStartDate: get('VisitStartDate'),
-            VisitEndDate: get('VisitEndDate'),
-            VisitPurposeCodeID: get('VisitPurposeCodeID'),
-            Names: getAll('Name[]'),
-            BirthDates: getAll('BirthDate[]'),
-            Mobiles: getAll('Mobile[]'),
-            Companies: getAll('CompanyName[]'),
-          };
-        })()`);
-        screenshotB64 = await takeScreenshot(page);
-
-        await browser.close();
-        browser = null;
-
-        return jsonRes({
-          ok: true,
-          stage: "완료",
-          error: null,
-          formState,
-          screenshot: screenshotB64,
-        });
-
-      } catch (e) {
-        console.error(`[DEBUG] Exception at '${stage}': ${e.constructor.name}: ${e.message}`);
-        const screenshotB64 = page ? await takeScreenshot(page) : null;
-        if (browser) {
-          try { await browser.close(); } catch {}
-        }
-        return jsonRes({
-          ok: false,
-          stage,
-          error: `[${e.constructor.name}] ${e.message}`,
-          screenshot: screenshotB64,
-        });
+      if (!startDate) {
+        return jsonRes({ ok: false, error: "방문시작일이 누락되었습니다." });
       }
+      if (!Array.isArray(visitorIndices) || visitorIndices.length === 0) {
+        return jsonRes({ ok: false, error: "visitorIndices(방문객 인덱스 배열)가 누락되었습니다." });
+      }
+
+      // 종료일 미지정 또는 시작일보다 이른 경우 시작일로 자동 설정
+      const endDate = rawEndDate && rawEndDate >= startDate ? rawEndDate : startDate;
+
+      // 선택된 방문객만 (INFO.VISITORS에서 인덱스로 조회 — 한글 인코딩 문제 없음)
+      const selectedVisitors = visitorIndices.map(i => INFO.VISITORS[i]).filter(Boolean);
+      if (selectedVisitors.length === 0) {
+        return jsonRes({ ok: false, error: "유효한 방문객 인덱스가 없습니다." });
+      }
+
+      // SSE 스트리밍 설정
+      const { readable, writable } = new TransformStream();
+      const writer = writable.getWriter();
+      const enc = new TextEncoder();
+
+      const TOTAL_STEPS = 5;
+      const send = async (step, msg, extra = {}) => {
+        const line = JSON.stringify({ step, total: TOTAL_STEPS, msg, ...extra });
+        await writer.write(enc.encode(`data: ${line}\n\n`));
+      };
+
+      // 자동화 비동기 실행 (응답 스트림은 즉시 반환)
+      (async () => {
+        let browser = null, page = null, stage = "초기화";
+        try {
+          stage = "브라우저 실행";
+          await send(1, "브라우저를 실행하는 중...");
+          if (!env.MY_BROWSER) throw new Error("MY_BROWSER 바인딩 없음");
+          browser = await puppeteer.launch(env.MY_BROWSER);
+          page = await browser.newPage();
+          await page.setViewport({ width: 1280, height: 900 });
+
+          stage = "사이트 접속";
+          await send(2, "사이트에 접속하는 중...");
+          await page.goto(INFO.TARGET_URL, { waitUntil: "networkidle0", timeout: 20000 });
+          await page.waitForTimeout(1000);
+
+          stage = "방문신청 버튼 클릭";
+          await send(3, "방문신청 버튼 클릭 중...");
+          const clicked = await page.evaluate(`(() => {
+            const btn = Array.from(document.querySelectorAll('button, a')).find(b => {
+              const t = (b.innerText || '').trim();
+              return t === '방문신청' || t === 'Apply Visit';
+            });
+            if (btn) { btn.scrollIntoView({ behavior: 'instant', block: 'center' }); btn.click(); return true; }
+            return false;
+          })()`);
+          if (!clicked) throw new Error("'방문신청'/'Apply Visit' 버튼 미발견");
+          await page.waitForTimeout(3000);
+
+          stage = "폼 입력";
+          await send(4, `폼 입력 중... (방문객 ${selectedVisitors.length}명)`);
+          const runtimeInfo = {
+            ...INFO,
+            VISITORS: selectedVisitors,
+            VISIT_START_DATE: startDate,
+            VISIT_END_DATE: endDate,
+          };
+          const result = await page.evaluate(buildFillFormScript(runtimeInfo));
+          if (!result.success) throw new Error(result.error);
+          await page.evaluate(buildFillNamesScript(selectedVisitors.map(v => v.name)));
+
+          stage = "완료";
+          await send(5, "스크린샷 촬영 중...");
+          const formState = await page.evaluate(`(() => {
+            const all = Array.from(document.querySelectorAll('input, select, textarea'));
+            const get = name => { const el = all.find(e => e.name === name); return el ? el.value : null; };
+            const getAll = name => all.filter(e => e.name === name).map(e => e.value);
+            return {
+              Location: get('Location'),
+              PlaceCodeID: get('PlaceCodeID'),
+              ContactName: get('ContactName'),
+              VisitStartDate: get('VisitStartDate'),
+              VisitEndDate: get('VisitEndDate'),
+              VisitPurposeCodeID: get('VisitPurposeCodeID'),
+              Names: getAll('Name[]'),
+              BirthDates: getAll('BirthDate[]'),
+              Mobiles: getAll('Mobile[]'),
+              Companies: getAll('CompanyName[]'),
+            };
+          })()`);
+          const screenshot = await takeScreenshot(page);
+          await browser.close(); browser = null;
+
+          await send(5, "완료!", { done: true, ok: true, formState, screenshot });
+
+        } catch (e) {
+          console.error(`[ERROR] ${stage}: ${e.message}`);
+          const screenshot = page ? await takeScreenshot(page) : null;
+          if (browser) try { await browser.close(); } catch {}
+          await send(0, `오류: ${e.message}`, { done: true, ok: false, stage, error: e.message, screenshot });
+        } finally {
+          await writer.close();
+        }
+      })();
+
+      return new Response(readable, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
     }
 
     // ── 정적 파일 서빙 ────────────────────────────────────────────
