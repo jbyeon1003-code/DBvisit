@@ -1,8 +1,20 @@
 import puppeteer from "@cloudflare/puppeteer";
 
 const INFO = {
-  VISITORS: ["한준석", "최선국", "신영재", "이영훈", "강정규", "변정호", "김시준", "권이건", "장덕수", "백한빈", "박찬순"],
-  VISITOR_BIRTH: "1990-08-12",
+  VISITORS: [
+    { name: "한준석", birth: "1977-01-03" },
+    { name: "최선국", birth: "1979-05-03" },
+    { name: "조영택", birth: "1985-01-20" },
+    { name: "신영재", birth: "1985-04-05" },
+    { name: "이영훈", birth: "1988-06-20" },
+    { name: "강정규", birth: "1990-03-07" },
+    { name: "변정호", birth: "1990-08-12" },
+    { name: "김시준", birth: "1992-01-08" },
+    { name: "권이건", birth: "1994-12-10" },
+    { name: "장덕수", birth: "1996-04-14" },
+    { name: "백한빈", birth: "1996-08-31" },
+    { name: "박찬순", birth: "1999-04-07" },
+  ],
   VISITOR_PHONE: "01038020065",
   VISITOR_COMPANY: "ASML",
   MANAGER_NAME: "채명주",
@@ -30,8 +42,10 @@ function buildFillFormScript(runtimeInfo) {
   return `(async () => {
     const info = ${infoJson};
     try {
-      document.querySelectorAll('input[name="ckAgree1"], input[name="ckAgree2"]')
+      // (필수)동의 체크박스 전부 체크
+      document.querySelectorAll('input[type="checkbox"]')
         .forEach(cb => { if (!cb.checked) cb.click(); });
+      await new Promise(r => setTimeout(r, 300));
 
       function setVal(el, value) {
         if (!el) return false;
@@ -82,12 +96,12 @@ function buildFillFormScript(runtimeInfo) {
         if (addBtn) { addBtn.click(); await new Promise(r => setTimeout(r, 600)); }
       }
 
-      // Name[] 제외한 방문객 필드 채우기
+      // Name[] 제외한 방문객 필드 채우기 (생년월일은 개인별 적용)
       const birthInputs   = qsAll('BirthDate[]');
       const mobileInputs  = qsAll('Mobile[]');
       const companyInputs = qsAll('CompanyName[]');
       for (let i = 0; i < info.VISITORS.length; i++) {
-        setVal(birthInputs[i],   info.VISITOR_BIRTH);
+        setVal(birthInputs[i],   info.VISITORS[i].birth);
         setVal(mobileInputs[i],  info.VISITOR_PHONE);
         setVal(companyInputs[i], info.VISITOR_COMPANY);
       }
@@ -121,7 +135,7 @@ function buildFillNamesScript(visitors) {
 
 async function takeScreenshot(page) {
   try {
-    const shot = await page.screenshot({ type: "jpeg", quality: 70 });
+    const shot = await page.screenshot({ type: "jpeg", quality: 70, fullPage: true });
     // @cloudflare/puppeteer는 Uint8Array 반환 — web API btoa() 사용
     const bytes = new Uint8Array(shot);
     let binary = "";
@@ -364,7 +378,7 @@ export default {
 
         // 5b단계: Name[] 한글 입력 — 네이티브 setter로 직접 설정 (이벤트 없음)
         stage = "이름 입력";
-        await page.evaluate(buildFillNamesScript(selectedVisitors));
+        await page.evaluate(buildFillNamesScript(selectedVisitors.map(v => v.name)));
 
         // 6단계: 폼 필드 값 검증 + 최종 스크린샷
         stage = "스크린샷 촬영";
