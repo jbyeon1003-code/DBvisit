@@ -42,9 +42,14 @@ function buildFillFormScript(runtimeInfo) {
   return `(async () => {
     const info = ${infoJson};
     try {
-      // (필수)동의 체크박스 전부 체크
-      document.querySelectorAll('input[type="checkbox"]')
-        .forEach(cb => { if (!cb.checked) cb.click(); });
+      // (필수) 동의만 체크, (선택) 동의는 건드리지 않음
+      Array.from(document.querySelectorAll('input[type="checkbox"]')).forEach(cb => {
+        const container = cb.closest('label,tr,li,div') || cb.parentElement;
+        const text = container ? container.innerText : '';
+        const isOptional = text.includes('(선택)') || text.includes('선택사항');
+        const isRequired = cb.required || text.includes('(필수)') || text.includes('필수항목');
+        if (isRequired && !isOptional && !cb.checked) cb.click();
+      });
       await new Promise(r => setTimeout(r, 300));
 
       function setVal(el, value) {
