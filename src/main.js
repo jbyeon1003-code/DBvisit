@@ -157,7 +157,8 @@ async function takeScreenshot(page) {
   }
 }
 
-// 429 rate limit 시 최대 3회 재시도 (3s → 6s → 9s 대기)
+// 429 rate limit 시 최대 3회 재시도 (15s → 30s → 45s 대기)
+// Cloudflare 유휴 세션 정리에 약 1~2분 소요되므로 넉넉히 대기
 async function launchBrowser(myBrowser, onRetry) {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
@@ -165,7 +166,7 @@ async function launchBrowser(myBrowser, onRetry) {
     } catch (e) {
       const is429 = e.message.includes('429') || e.message.includes('Rate limit');
       if (is429 && attempt < 3) {
-        const wait = attempt * 3000;
+        const wait = attempt * 15000;
         if (onRetry) await onRetry(attempt, wait);
         await new Promise(r => setTimeout(r, wait));
       } else {
