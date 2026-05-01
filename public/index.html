@@ -5,478 +5,502 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DBHitek 방문신청 자동화</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:        #00854A;
+      --green-dk:     #023921;
+      --green-lt:     #EBF7F2;
+      --orange:       #F15A22;
+      --orange-lt:    #FEF2EC;
+      --bg:           #EDF1F8;
+      --surface:      #fff;
+      --border:       #E1E7F2;
+      --text:         #18243C;
+      --muted:        #6B7A9A;
+      --shadow-sm:    0 1px 3px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.04);
+    }
 
     body {
       font-family: 'Noto Sans KR', sans-serif;
       font-size: 14px;
-      letter-spacing: -0.5px;
-      background: #EBEFF6;
+      letter-spacing: -0.4px;
+      background: var(--bg);
       min-height: 100vh;
-      color: #21293E;
+      color: var(--text);
     }
 
-    /* ── 상단 헤더 ── */
-    .page-header {
-      background: #023921;
-      height: 56px;
+    /* ──────── Header ──────── */
+    .app-header {
+      background: var(--green-dk);
+      height: 52px;
       display: flex;
       align-items: center;
-      padding: 0 28px;
-      gap: 12px;
+      padding: 0 24px;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
     }
-    .page-header .logo-badge {
-      background: #F15A22;
+    .h-badge {
+      background: var(--orange);
       color: #fff;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 700;
-      letter-spacing: 1px;
+      letter-spacing: 1.2px;
       padding: 3px 9px;
-      border-radius: 12px;
+      border-radius: 10px;
     }
-    .page-header h1 {
-      font-size: 17px;
-      font-weight: 700;
-      color: #fff;
-    }
-    .page-header .health-area {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .health-dot { width: 7px; height: 7px; border-radius: 50%; background: #4a5568; display: inline-block; }
-    .health-dot.ok { background: #48bb78; }
-    .health-dot.error { background: #fc8181; }
-    .health-text { font-size: 11px; color: rgba(255,255,255,.5); }
-    .health-btn {
+    .h-title { font-size: 15px; font-weight: 600; color: #fff; }
+    .h-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .h-dot { width: 6px; height: 6px; border-radius: 50%; background: #4a5568; transition: background .3s; }
+    .h-dot.ok    { background: #48bb78; }
+    .h-dot.error { background: #fc8181; }
+    .h-status { font-size: 11px; color: rgba(255,255,255,.4); }
+    .h-btn {
       font-size: 11px; font-weight: 500;
-      color: #fff; background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.2);
-      border-radius: 14px; padding: 4px 12px;
+      color: #fff; background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 12px; padding: 3px 12px;
       cursor: pointer; font-family: inherit;
       transition: background .15s;
     }
-    .health-btn:hover { background: rgba(255,255,255,.2); }
+    .h-btn:hover { background: rgba(255,255,255,.18); }
 
-    /* ── 콘텐츠 래퍼 ── */
-    .content-wrap {
-      max-width: 620px;
-      margin: 28px auto 60px;
-      padding: 0 20px;
+    /* ──────── Layout ──────── */
+    .wrap {
+      max-width: 560px;
+      margin: 20px auto 64px;
+      padding: 0 16px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 10px;
     }
 
-    /* ── 카드 ── */
+    /* ──────── Card ──────── */
     .card {
-      background: #fff;
-      border-radius: 8px;
+      background: var(--surface);
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
       overflow: hidden;
     }
 
-    /* 섹션 타이틀 바 */
-    .section-header {
-      background: #F8F9FC;
-      border-bottom: 1px solid #DFE4EE;
-      padding: 11px 20px;
+    .card-head {
+      padding: 12px 20px 10px;
+      border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
-    .section-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: #21293E;
+    .card-title {
       display: flex;
       align-items: center;
-      gap: 7px;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
     }
-    .section-title::before {
-      content: '';
-      display: inline-block;
-      width: 3px;
-      height: 13px;
-      background: #00854A;
+    .title-bar {
+      width: 3px; height: 14px;
+      background: var(--green);
       border-radius: 2px;
+      flex-shrink: 0;
     }
-    .section-sub { font-size: 11px; color: #636D85; font-weight: 400; }
-
-    .section-body { padding: 18px 20px; }
-
-    /* ── 날짜 ── */
-    .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .field-label {
-      display: block;
-      font-size: 12px;
+    .title-bar.orange { background: var(--orange); }
+    .card-sub {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--muted);
+    }
+    .card-link {
+      font-size: 11px;
       font-weight: 500;
-      color: #636D85;
+      color: #0080C6;
+      cursor: pointer;
+    }
+    .card-link:hover { text-decoration: underline; }
+
+    .card-body { padding: 16px 20px; }
+
+    /* ──────── Date ──────── */
+    .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .f-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
       margin-bottom: 6px;
     }
     .inp-date {
-      width: 100%;
-      height: 32px;
+      width: 100%; height: 36px;
       padding: 0 14px;
-      border: 1px solid #DFE4EE;
-      border-radius: 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 18px;
       font-size: 13px;
       font-family: inherit;
-      color: #21293E;
-      background: #fff;
+      color: var(--text);
+      background: #FAFBFD;
       outline: none;
       cursor: pointer;
-      letter-spacing: -0.3px;
+      transition: border-color .15s;
     }
-    .inp-date:focus { border-color: #00854A; }
+    .inp-date:focus { border-color: var(--green); background: #fff; }
 
-    /* ── 방문객 그리드 ── */
-    .visitor-grid {
+    /* ──────── Info table ──────── */
+    .info-rows { display: flex; flex-direction: column; }
+    .info-row {
+      display: flex;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-k {
+      width: 76px;
+      flex-shrink: 0;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .info-v {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    /* ──────── Chips ──────── */
+    .chip-grid {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 8px;
+      gap: 7px;
     }
-    .visitor-chip {
-      display: flex;
+    .chip {
+      display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 7px 10px;
-      border: 1px solid #DFE4EE;
-      border-radius: 16px;
-      background: #fff;
+      justify-content: center;
+      min-width: 74px;
+      padding: 6px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      background: #FAFBFD;
       cursor: pointer;
       transition: all .15s;
       font-size: 13px;
       font-weight: 500;
-      color: #45567D;
-      white-space: nowrap;
+      color: var(--muted);
+      user-select: none;
     }
-    .visitor-chip:hover { border-color: #00854A; color: #00854A; background: #F0FBF5; }
-    .visitor-chip.checked { background: #00854A; border-color: #00854A; color: #fff; }
-    .visitor-chip input { display: none; }
+    .chip:hover { border-color: var(--green); color: var(--green); background: var(--green-lt); }
+    .chip.on   { background: var(--green); border-color: var(--green); color: #fff; font-weight: 600; }
+    .chip.on-o { background: var(--orange); border-color: var(--orange); color: #fff; font-weight: 600; }
+    .chip input { display: none; }
 
-    .select-all-link {
-      font-size: 11px;
-      color: #0088CB;
-      cursor: pointer;
-      text-decoration: underline;
-      font-weight: 500;
+    /* ──────── Run area ──────── */
+    .run-card {
+      background: var(--surface);
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
     }
+    .run-body { padding: 16px 20px; }
 
-    /* ── 구분선 ── */
-    .divider {
-      border: none;
-      border-top: 1px solid #EBEFF6;
-      margin: 0;
-    }
-
-    /* ── 기본 정보 ── */
-    .info-table { width: 100%; border-collapse: collapse; }
-    .info-table tr { border-bottom: 1px solid #EBEFF6; }
-    .info-table tr:last-child { border-bottom: none; }
-    .info-table td { padding: 9px 0; font-size: 13px; }
-    .info-table .td-key { color: #636D85; font-weight: 500; width: 90px; }
-    .info-table .td-val { color: #21293E; font-weight: 500; }
-
-    /* ── 버튼 ── */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      height: 34px;
-      padding: 0 20px;
-      border: none;
-      border-radius: 17px;
-      font-size: 13px;
-      font-weight: 700;
+    .btn-run {
+      width: 100%; height: 46px;
+      border: none; border-radius: 23px;
+      font-size: 14px; font-weight: 700;
       font-family: inherit;
       cursor: pointer;
       letter-spacing: -0.3px;
-      transition: opacity .15s, box-shadow .15s;
-    }
-    .btn:disabled { opacity: .45; cursor: not-allowed; }
-    .btn-green {
-      background: #00854A;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      background: linear-gradient(135deg, #00a85c 0%, var(--green) 100%);
       color: #fff;
+      box-shadow: 0 4px 14px rgba(0,133,74,.35);
+      transition: box-shadow .15s, transform .1s, opacity .15s;
     }
-    .btn-green:not(:disabled):hover { box-shadow: 0 2px 8px rgba(0,133,74,.4); }
-    .btn-orange {
-      background: #F15A22;
-      color: #fff;
-      box-shadow: 0 2px 4px rgba(241,90,34,.35);
+    .btn-run:not(:disabled):hover {
+      box-shadow: 0 6px 20px rgba(0,133,74,.45);
+      transform: translateY(-1px);
     }
-    .btn-orange:not(:disabled):hover { box-shadow: 0 3px 10px rgba(241,90,34,.5); }
-    .btn-full { width: 100%; height: 38px; border-radius: 19px; font-size: 14px; }
+    .btn-run:not(:disabled):active { transform: translateY(0); }
+    .btn-run:disabled { opacity: .45; cursor: not-allowed; }
 
-    /* ── 진행 표시 ── */
-    .progress-wrap {
+    /* ──────── Progress ──────── */
+    .prog-wrap {
       display: none;
-      padding: 12px 20px;
-      background: #F8F9FC;
-      border-top: 1px solid #DFE4EE;
+      padding: 12px 20px 14px;
+      background: #F8FAFB;
+      border-top: 1px solid var(--border);
     }
-    .progress-wrap.show { display: block; }
-    .progress-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .progress-msg { font-size: 12px; font-weight: 600; color: #00854A; }
-    .progress-step { font-size: 11px; color: #636D85; }
-    .progress-track {
-      height: 4px;
-      background: #DFE4EE;
+    .prog-wrap.show { display: block; }
+    .prog-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .prog-msg  { font-size: 12px; font-weight: 600; color: var(--green); }
+    .prog-step { font-size: 11px; color: var(--muted); }
+    .prog-track {
+      height: 3px;
+      background: var(--border);
       border-radius: 2px;
       overflow: hidden;
     }
-    .progress-fill {
+    .prog-fill {
       height: 100%;
-      background: linear-gradient(90deg, #00854A, #00c470);
+      background: linear-gradient(90deg, var(--green), #00d672);
       border-radius: 2px;
-      transition: width .5s ease;
+      transition: width .4s ease;
       width: 0%;
     }
 
-    /* ── 상태 메시지 ── */
-    .status-bar {
+    /* ──────── Status ──────── */
+    .status {
       display: none;
       align-items: center;
       gap: 8px;
-      padding: 11px 20px;
+      padding: 12px 20px;
       font-size: 13px;
       font-weight: 600;
-      border-top: 1px solid #DFE4EE;
+      border-top: 1px solid var(--border);
     }
-    .status-bar.show { display: flex; }
-    .status-bar.success { color: #00854A; background: #F0FBF5; }
-    .status-bar.error { color: #ED3125; background: #FFF5F5; }
+    .status.show { display: flex; }
+    .status.ok { color: var(--green); background: var(--green-lt); }
+    .status.ng { color: #D93025; background: #FFF5F4; }
 
-    .error-toggle {
+    .err-toggle {
       display: none;
       padding: 6px 20px;
       font-size: 11px;
-      color: #636D85;
+      color: var(--muted);
       cursor: pointer;
       text-decoration: underline;
-      background: #fff;
-      border-top: 1px solid #EBEFF6;
+      border-top: 1px solid #EEF1F8;
     }
-    .error-toggle.show { display: block; }
-    .error-box {
+    .err-toggle.show { display: block; }
+    .err-box {
       display: none;
-      margin: 0 20px 16px;
+      margin: 0 20px 14px;
       padding: 10px 14px;
       background: #1e293b;
       color: #94a3b8;
       border-radius: 8px;
       font-size: 11px;
-      font-family: monospace;
+      font-family: 'Courier New', monospace;
       white-space: pre-wrap;
       word-break: break-all;
-      max-height: 160px;
+      max-height: 140px;
       overflow-y: auto;
     }
-    .error-box.show { display: block; }
+    .err-box.show { display: block; }
 
-    /* ── 스크린샷 ── */
-    .screenshot-wrap {
+    /* ──────── Screenshot ──────── */
+    .shot-wrap {
       display: none;
-      padding: 16px 20px 20px;
-      border-top: 1px dashed #DFE4EE;
+      padding: 14px 20px 18px;
+      border-top: 1px dashed var(--border);
     }
-    .screenshot-wrap.show { display: block; }
-    .screenshot-label { font-size: 11px; color: #636D85; font-weight: 600; margin-bottom: 10px; }
-    .screenshot-img {
+    .shot-wrap.show { display: block; }
+    .shot-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-bottom: 10px;
+    }
+    .shot-img {
       width: 100%;
       border-radius: 8px;
-      border: 1px solid #DFE4EE;
+      border: 1px solid var(--border);
       cursor: zoom-in;
     }
-    .screenshot-img.error-shot { border-color: #FC8181; }
-    .screenshot-note { font-size: 11px; color: #636D85; margin-top: 8px; text-align: center; }
+    .shot-img.err { border-color: #FC8181; }
+    .shot-note {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 8px;
+      text-align: center;
+    }
 
-    /* ── 스피너 ── */
-    .spinner {
-      width: 14px; height: 14px;
-      border: 2px solid rgba(255,255,255,.4);
+    /* ──────── Spinner ──────── */
+    .spin {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,.3);
       border-top-color: #fff;
       border-radius: 50%;
-      animation: spin .7s linear infinite;
-      flex-shrink: 0;
+      animation: s .7s linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes s { to { transform: rotate(360deg); } }
 
-    .footer-note {
+    .footer {
       text-align: center;
       font-size: 12px;
-      color: #636D85;
-      padding: 0 0 20px;
+      color: var(--muted);
+      padding-bottom: 4px;
     }
   </style>
 </head>
 <body>
 
-<!-- 상단 헤더 -->
-<div class="page-header">
-  <span class="logo-badge">DB HiTek</span>
-  <h1>방문신청 자동화</h1>
-  <div class="health-area">
-    <span class="health-dot" id="healthDot"></span>
-    <span class="health-text" id="healthText">-</span>
-    <button class="health-btn" onclick="checkHealth()">상태 확인</button>
+<header class="app-header">
+  <span class="h-badge">DB HiTek</span>
+  <span class="h-title">방문신청 자동화</span>
+  <div class="h-right">
+    <span class="h-dot" id="hDot"></span>
+    <span class="h-status" id="hStatus">-</span>
+    <button class="h-btn" onclick="checkHealth()">상태 확인</button>
   </div>
-</div>
+</header>
 
-<div class="content-wrap">
+<div class="wrap">
 
-  <!-- 날짜 선택 -->
+  <!-- 1. 방문 기간 -->
   <div class="card">
-    <div class="section-header">
-      <span class="section-title">방문 기간</span>
+    <div class="card-head">
+      <div class="card-title">
+        <span class="title-bar"></span>
+        방문 기간
+      </div>
     </div>
-    <div class="section-body">
+    <div class="card-body">
       <div class="date-row">
         <div>
-          <label class="field-label" for="startDate">방문 시작일</label>
+          <label class="f-label" for="startDate">시작일</label>
           <input class="inp-date" type="date" id="startDate" />
         </div>
         <div>
-          <label class="field-label" for="endDate">방문 종료일</label>
+          <label class="f-label" for="endDate">종료일</label>
           <input class="inp-date" type="date" id="endDate" />
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 방문신청 (단일 선택) -->
+  <!-- 2. 기본 입력 정보 -->
   <div class="card">
-    <div class="section-header">
-      <span class="section-title">방문신청 <span class="section-sub">1명 선택</span></span>
+    <div class="card-head">
+      <div class="card-title">
+        <span class="title-bar"></span>
+        기본 입력 정보
+      </div>
     </div>
-    <div class="section-body">
-      <div class="visitor-grid" id="gridSingle"></div>
+    <div class="card-body" style="padding-top:10px; padding-bottom:6px;">
+      <div class="info-rows">
+        <div class="info-row"><span class="info-k">담당자</span><span class="info-v">채명주</span></div>
+        <div class="info-row"><span class="info-k">부서</span><span class="info-v">구매팀 (Procurement)</span></div>
+        <div class="info-row"><span class="info-k">소속</span><span class="info-v">ASML</span></div>
+        <div class="info-row"><span class="info-k">출입지역</span><span class="info-v">상우캠퍼스 어드민동</span></div>
+        <div class="info-row"><span class="info-k">방문목적</span><span class="info-v">업무협의</span></div>
+      </div>
     </div>
-    <hr class="divider">
-    <div class="section-body" style="padding-top:14px; padding-bottom:16px;">
-      <button class="btn btn-green btn-full" id="btnSingle" onclick="runAuto('single')">
-        <span id="iconSingle">▶</span>
-        <span id="textSingle">자동 입력 시작</span>
+  </div>
+
+  <!-- 3. 방문신청 (단일 선택) -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">
+        <span class="title-bar"></span>
+        방문신청
+        <span class="card-sub">· 1명 선택</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="chip-grid" id="gridSingle"></div>
+    </div>
+  </div>
+
+  <!-- 4. 인원추가 (다중 선택) -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">
+        <span class="title-bar orange"></span>
+        인원추가
+        <span class="card-sub">· 복수 선택 가능</span>
+      </div>
+      <span class="card-link" onclick="toggleAll()">전체 선택 / 해제</span>
+    </div>
+    <div class="card-body">
+      <div class="chip-grid" id="gridMulti"></div>
+    </div>
+  </div>
+
+  <!-- 5. 자동 입력 시작 -->
+  <div class="run-card">
+    <div class="run-body">
+      <button class="btn-run" id="btnRun" onclick="runAuto()">
+        <span id="runIcon">▶</span>
+        <span id="runText">자동 입력 시작</span>
       </button>
     </div>
 
-    <div class="progress-wrap" id="progressSingle">
-      <div class="progress-top">
-        <span class="progress-msg" id="msgSingle">-</span>
-        <span class="progress-step" id="stepSingle"></span>
+    <div class="prog-wrap" id="progWrap">
+      <div class="prog-top">
+        <span class="prog-msg" id="progMsg">-</span>
+        <span class="prog-step" id="progStep"></span>
       </div>
-      <div class="progress-track"><div class="progress-fill" id="fillSingle"></div></div>
+      <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
     </div>
-    <div class="status-bar" id="statusSingle">
-      <span id="statusIconSingle"></span>
-      <span id="statusMsgSingle"></span>
+
+    <div class="status" id="statusEl">
+      <span id="statusIcon"></span>
+      <span id="statusMsg"></span>
     </div>
-    <div class="error-toggle" id="toggleSingle" onclick="toggleErr('Single')">▼ 오류 상세 보기</div>
-    <div class="error-box" id="errSingle"></div>
-    <div class="screenshot-wrap" id="shotAreaSingle">
-      <div class="screenshot-label" id="shotLabelSingle">입력 결과 스크린샷</div>
-      <img class="screenshot-img" id="shotImgSingle" onclick="window.open(this.src)" title="클릭해서 크게 보기" />
-      <div class="screenshot-note" id="shotNoteSingle">실제 신청 버튼은 눌리지 않았습니다. 확인 후 직접 제출하세요.</div>
+
+    <div class="err-toggle" id="errToggle" onclick="toggleErr()">▼ 오류 상세 보기</div>
+    <div class="err-box" id="errBox"></div>
+
+    <div class="shot-wrap" id="shotWrap">
+      <div class="shot-label" id="shotLabel">입력 결과 스크린샷</div>
+      <img class="shot-img" id="shotImg" onclick="window.open(this.src)" title="클릭해서 크게 보기" />
+      <div class="shot-note" id="shotNote">실제 신청 버튼은 눌리지 않았습니다. 확인 후 직접 제출하세요.</div>
     </div>
   </div>
 
-  <!-- 인원추가 (다중 선택) -->
-  <div class="card">
-    <div class="section-header">
-      <span class="section-title">인원추가 <span class="section-sub">복수 선택 가능</span></span>
-      <span class="select-all-link" onclick="toggleAll()">전체 선택/해제</span>
-    </div>
-    <div class="section-body">
-      <div class="visitor-grid" id="gridMulti"></div>
-    </div>
-    <div class="progress-wrap" id="progressMulti">
-      <div class="progress-top">
-        <span class="progress-msg" id="msgMulti">-</span>
-        <span class="progress-step" id="stepMulti"></span>
-      </div>
-      <div class="progress-track"><div class="progress-fill" id="fillMulti"></div></div>
-    </div>
-    <div class="status-bar" id="statusMulti">
-      <span id="statusIconMulti"></span>
-      <span id="statusMsgMulti"></span>
-    </div>
-    <div class="error-toggle" id="toggleMulti" onclick="toggleErr('Multi')">▼ 오류 상세 보기</div>
-    <div class="error-box" id="errMulti"></div>
-    <div class="screenshot-wrap" id="shotAreaMulti">
-      <div class="screenshot-label" id="shotLabelMulti">입력 결과 스크린샷</div>
-      <img class="screenshot-img" id="shotImgMulti" onclick="window.open(this.src)" title="클릭해서 크게 보기" />
-      <div class="screenshot-note">실제 신청 버튼은 눌리지 않았습니다. 확인 후 직접 제출하세요.</div>
-    </div>
-  </div>
-
-  <!-- 기본 입력 정보 -->
-  <div class="card">
-    <div class="section-header">
-      <span class="section-title">기본 입력 정보</span>
-    </div>
-    <div class="section-body">
-      <table class="info-table">
-        <tr><td class="td-key">담당자</td><td class="td-val">채명주</td></tr>
-        <tr><td class="td-key">부서</td><td class="td-val">구매팀 (Procurement)</td></tr>
-        <tr><td class="td-key">소속</td><td class="td-val">ASML</td></tr>
-        <tr><td class="td-key">출입지역</td><td class="td-val">상우캠퍼스 어드민동</td></tr>
-        <tr><td class="td-key">방문목적</td><td class="td-val">업무협의</td></tr>
-      </table>
-    </div>
-  </div>
-
-  <p class="footer-note">내용 확인 후 신청 버튼은 직접 눌러주세요.</p>
+  <p class="footer">내용 확인 후 신청 버튼은 직접 눌러주세요.</p>
 </div>
 
 <script>
-  const visitorList = [
-    "한준석", "최선국", "조영택", "신영재", "이영훈", "강정규",
-    "변정호", "김시준", "권이건", "장덕수", "백한빈", "박찬순"
+  const VISITORS = [
+    "한준석","최선국","조영택","신영재","이영훈","강정규",
+    "변정호","김시준","권이건","장덕수","백한빈","박찬순"
   ];
 
   // 방문신청: 라디오 (단일)
-  visitorList.forEach((name, idx) => {
-    const chip = document.createElement('label');
-    chip.className = 'visitor-chip';
-    chip.innerHTML = `<input type="radio" name="visitor" value="${idx}"><span>${name}</span>`;
-    chip.querySelector('input').addEventListener('change', () => {
-      document.querySelectorAll('#gridSingle .visitor-chip').forEach(c =>
-        c.classList.toggle('checked', c.querySelector('input').checked)
+  VISITORS.forEach((name, idx) => {
+    const el = document.createElement('label');
+    el.className = 'chip';
+    el.innerHTML = `<input type="radio" name="visitor" value="${idx}"><span>${name}</span>`;
+    el.querySelector('input').addEventListener('change', () => {
+      document.querySelectorAll('#gridSingle .chip').forEach(c =>
+        c.classList.toggle('on', c.querySelector('input').checked)
       );
     });
-    document.getElementById('gridSingle').appendChild(chip);
+    document.getElementById('gridSingle').appendChild(el);
   });
 
   // 인원추가: 체크박스 (다중)
-  visitorList.forEach((name, idx) => {
-    const chip = document.createElement('label');
-    chip.className = 'visitor-chip';
-    chip.innerHTML = `<input type="checkbox" name="visitorMulti" value="${idx}"><span>${name}</span>`;
-    chip.querySelector('input').addEventListener('change', function () {
-      chip.classList.toggle('checked', this.checked);
+  VISITORS.forEach((name, idx) => {
+    const el = document.createElement('label');
+    el.className = 'chip';
+    el.innerHTML = `<input type="checkbox" name="visitorMulti" value="${idx}"><span>${name}</span>`;
+    el.querySelector('input').addEventListener('change', function () {
+      el.classList.toggle('on-o', this.checked);
     });
-    document.getElementById('gridMulti').appendChild(chip);
+    document.getElementById('gridMulti').appendChild(el);
   });
 
   function toggleAll() {
     const boxes = document.querySelectorAll('input[name="visitorMulti"]');
-    const allChecked = Array.from(boxes).every(b => b.checked);
+    const allOn = Array.from(boxes).every(b => b.checked);
     boxes.forEach(b => {
-      b.checked = !allChecked;
-      b.closest('.visitor-chip').classList.toggle('checked', !allChecked);
+      b.checked = !allOn;
+      b.closest('.chip').classList.toggle('on-o', !allOn);
     });
   }
 
-  // 오늘 날짜
+  // 날짜 초기화
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('startDate').value = today;
   document.getElementById('endDate').value = today;
@@ -485,90 +509,95 @@
     if (!end.value || end.value < this.value) end.value = this.value;
   });
 
-  // Worker 상태
+  // 헬스체크
   async function checkHealth() {
-    const dot = document.getElementById('healthDot');
-    const text = document.getElementById('healthText');
-    dot.className = 'health-dot'; text.textContent = '확인 중...';
+    const dot = document.getElementById('hDot');
+    const txt = document.getElementById('hStatus');
+    dot.className = 'h-dot'; txt.textContent = '확인 중...';
     try {
       const d = await fetch('/health').then(r => r.json());
-      dot.className = 'health-dot' + (d.browser_ok && d.assets_ok ? ' ok' : ' error');
-      text.textContent = d.browser_ok && d.assets_ok ? '정상' : `Browser:${d.browser_ok?'✓':'✗'} Assets:${d.assets_ok?'✓':'✗'}`;
-    } catch { dot.className = 'health-dot error'; text.textContent = '응답 없음'; }
-  }
-
-  function setProgress(key, msg, step, total) {
-    const wrap = document.getElementById('progress' + key);
-    if (msg === null) { wrap.className = 'progress-wrap'; document.getElementById('fill' + key).style.width = '0%'; return; }
-    wrap.className = 'progress-wrap show';
-    document.getElementById('msg' + key).textContent = msg;
-    if (step != null) {
-      document.getElementById('step' + key).textContent = `${step} / ${total}`;
-      document.getElementById('fill' + key).style.width = `${Math.round(step / total * 100)}%`;
+      const ok = d.browser_ok && d.assets_ok;
+      dot.className = 'h-dot' + (ok ? ' ok' : ' error');
+      txt.textContent = ok ? '정상' : `B:${d.browser_ok?'✓':'✗'} A:${d.assets_ok?'✓':'✗'}`;
+    } catch {
+      dot.className = 'h-dot error'; txt.textContent = '응답없음';
     }
   }
 
-  function setStatus(key, type, icon, msg) {
-    const el = document.getElementById('status' + key);
-    el.className = 'status-bar show ' + type;
-    document.getElementById('statusIcon' + key).textContent = icon;
-    document.getElementById('statusMsg' + key).textContent = msg;
+  function setProgress(msg, step, total) {
+    const wrap = document.getElementById('progWrap');
+    if (msg === null) {
+      wrap.className = 'prog-wrap';
+      document.getElementById('progFill').style.width = '0%';
+      return;
+    }
+    wrap.className = 'prog-wrap show';
+    document.getElementById('progMsg').textContent = msg;
+    if (step != null) {
+      document.getElementById('progStep').textContent = `${step} / ${total}`;
+      document.getElementById('progFill').style.width = `${Math.round(step / total * 100)}%`;
+    }
   }
 
-  function showShot(key, b64, isError) {
-    const area = document.getElementById('shotArea' + key);
-    const img = document.getElementById('shotImg' + key);
-    const label = document.getElementById('shotLabel' + key);
-    label.textContent = isError ? '실패 시점 스크린샷' : '입력 결과 스크린샷';
+  function setStatus(type, icon, msg) {
+    const el = document.getElementById('statusEl');
+    el.className = 'status show ' + type;
+    document.getElementById('statusIcon').textContent = icon;
+    document.getElementById('statusMsg').textContent = msg;
+  }
+
+  function showShot(b64, isErr) {
+    document.getElementById('shotLabel').textContent = isErr ? '실패 시점 스크린샷' : '입력 결과 스크린샷';
+    const img = document.getElementById('shotImg');
     img.src = 'data:image/jpeg;base64,' + b64;
-    img.className = 'screenshot-img' + (isError ? ' error-shot' : '');
-    const note = document.getElementById('shotNote' + key);
-    if (note) note.style.display = isError ? 'none' : 'block';
-    area.className = 'screenshot-wrap show';
-    setTimeout(() => area.scrollIntoView({ behavior: 'smooth' }), 100);
+    img.className = 'shot-img' + (isErr ? ' err' : '');
+    document.getElementById('shotNote').style.display = isErr ? 'none' : 'block';
+    document.getElementById('shotWrap').className = 'shot-wrap show';
+    setTimeout(() => document.getElementById('shotWrap').scrollIntoView({ behavior: 'smooth' }), 100);
   }
 
-  function toggleErr(key) {
-    const box = document.getElementById('err' + key);
-    const tog = document.getElementById('toggle' + key);
+  function toggleErr() {
+    const box = document.getElementById('errBox');
+    const tog = document.getElementById('errToggle');
     const open = box.classList.contains('show');
-    box.className = open ? 'error-box' : 'error-box show';
+    box.className = open ? 'err-box' : 'err-box show';
     tog.textContent = open ? '▼ 오류 상세 보기' : '▲ 오류 상세 닫기';
   }
 
-  function resetUI(key) {
-    document.getElementById('status' + key).className = 'status-bar';
-    document.getElementById('toggle' + key).className = 'error-toggle';
-    document.getElementById('err' + key).className = 'error-box';
-    document.getElementById('shotArea' + key).className = 'screenshot-wrap';
-    setProgress(key, null);
+  function resetUI() {
+    document.getElementById('statusEl').className = 'status';
+    document.getElementById('errToggle').className = 'err-toggle';
+    document.getElementById('errBox').className = 'err-box';
+    document.getElementById('shotWrap').className = 'shot-wrap';
+    setProgress(null);
   }
 
-  async function runAuto(mode) {
+  async function runAuto() {
     const start = document.getElementById('startDate').value;
-    const end = document.getElementById('endDate').value;
-    const key = mode === 'single' ? 'Single' : 'Multi';
+    const end   = document.getElementById('endDate').value;
+
+    const radio = document.querySelector('input[name="visitor"]:checked');
+    const multiChecked = Array.from(document.querySelectorAll('input[name="visitorMulti"]:checked'));
 
     let visitorIndices;
-    if (mode === 'single') {
-      const r = document.querySelector('input[name="visitor"]:checked');
-      if (!r) { setStatus(key, 'error', '⚠', '방문객을 선택해주세요.'); return; }
-      visitorIndices = [parseInt(r.value, 10)];
+    if (radio) {
+      visitorIndices = [parseInt(radio.value, 10)];
+    } else if (multiChecked.length > 0) {
+      visitorIndices = multiChecked.map(c => parseInt(c.value, 10));
     } else {
-      visitorIndices = Array.from(document.querySelectorAll('input[name="visitorMulti"]:checked'))
-        .map(c => parseInt(c.value, 10));
-      if (!visitorIndices.length) { setStatus(key, 'error', '⚠', '방문객을 한 명 이상 선택해주세요.'); return; }
+      setStatus('ng', '⚠', '방문신청 또는 인원추가에서 방문객을 선택해주세요.');
+      return;
     }
-    if (!start) { setStatus(key, 'error', '⚠', '방문 시작일을 선택해주세요.'); return; }
+    if (!start) { setStatus('ng', '⚠', '방문 시작일을 선택해주세요.'); return; }
 
-    const btn = document.getElementById('btn' + key);
-    const icon = document.getElementById('icon' + key);
-    const text = document.getElementById('text' + key);
+    const btn  = document.getElementById('btnRun');
+    const icon = document.getElementById('runIcon');
+    const text = document.getElementById('runText');
     btn.disabled = true;
-    icon.innerHTML = '<div class="spinner"></div>';
+    icon.innerHTML = '<div class="spin"></div>';
     text.textContent = '실행 중...';
-    resetUI(key);
-    setProgress(key, '준비 중...', 0, 5);
+    resetUI();
+    setProgress('준비 중...', 0, 5);
 
     try {
       const res = await fetch('/run', {
@@ -583,41 +612,41 @@
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let buffer = '';
+      let buf = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const chunks = buffer.split('\n\n'); buffer = chunks.pop();
+        buf += decoder.decode(value, { stream: true });
+        const chunks = buf.split('\n\n'); buf = chunks.pop();
         for (const chunk of chunks) {
           if (!chunk.startsWith('data: ')) continue;
           let ev; try { ev = JSON.parse(chunk.slice(6)); } catch { continue; }
-          setProgress(key, ev.msg, ev.step, ev.total);
+          setProgress(ev.msg, ev.step, ev.total);
           if (ev.done) {
-            setProgress(key, null);
+            setProgress(null);
             if (ev.ok) {
-              setStatus(key, 'success', '✓', `${visitorIndices.length}명 입력 완료`);
-              if (ev.screenshot) showShot(key, ev.screenshot, false);
+              setStatus('ok', '✓', `${visitorIndices.length}명 입력 완료`);
+              if (ev.screenshot) showShot(ev.screenshot, false);
             } else {
-              setStatus(key, 'error', '✕', `[${ev.stage || '-'}] ${ev.error || '오류'}`);
-              if (ev.screenshot) showShot(key, ev.screenshot, true);
+              setStatus('ng', '✕', `[${ev.stage || '-'}] ${ev.error || '오류'}`);
+              if (ev.screenshot) showShot(ev.screenshot, true);
               if (ev.error) {
-                document.getElementById('err' + key).textContent = `단계: ${ev.stage}\n오류: ${ev.error}`;
-                document.getElementById('toggle' + key).className = 'error-toggle show';
+                document.getElementById('errBox').textContent = `단계: ${ev.stage}\n오류: ${ev.error}`;
+                document.getElementById('errToggle').className = 'err-toggle show';
               }
             }
           }
         }
       }
     } catch (e) {
-      setProgress(key, null);
-      setStatus(key, 'error', '✕', '서버 통신 오류');
-      document.getElementById('err' + key).textContent = e.message;
-      document.getElementById('toggle' + key).className = 'error-toggle show';
+      setProgress(null);
+      setStatus('ng', '✕', '서버 통신 오류');
+      document.getElementById('errBox').textContent = e.message;
+      document.getElementById('errToggle').className = 'err-toggle show';
     } finally {
       btn.disabled = false;
       icon.textContent = '▶';
-      text.textContent = mode === 'single' ? '자동 입력 시작' : '인원 추가 시작';
+      text.textContent = '자동 입력 시작';
     }
   }
 
