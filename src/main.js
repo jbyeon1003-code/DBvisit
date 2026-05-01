@@ -398,16 +398,14 @@ export default {
             };
           })()`);
           const screenshot = await takeScreenshot(page);
-          await browser.close(); browser = null;
-
           await send(5, "완료!", { done: true, ok: true, formState, screenshot });
 
         } catch (e) {
           console.error(`[ERROR] ${stage}: ${e.message}`);
           const screenshot = page ? await takeScreenshot(page) : null;
-          if (browser) try { await browser.close(); } catch {}
           await send(0, `오류: ${e.message}`, { done: true, ok: false, stage, error: e.message, screenshot });
         } finally {
+          if (browser) try { await browser.close(); } catch {}
           await writer.close();
         }
       })();
