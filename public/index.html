@@ -63,6 +63,31 @@
     .card-section { padding: 24px 28px; border-bottom: 1px solid #f1f5f9; }
     .card-section:last-child { border-bottom: none; }
 
+    /* 탭 */
+    .tab-nav {
+      display: flex;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 16px 12px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #94a3b8;
+      cursor: pointer;
+      font-family: inherit;
+      transition: color 0.15s;
+    }
+    .tab-btn:hover:not(.active) { color: #475569; background: #f8fafc; }
+    .tab-btn.active { color: #1a56db; border-bottom-color: #1a56db; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
     .section-label {
       font-size: 11px;
       font-weight: 700;
@@ -98,7 +123,7 @@
       cursor: pointer; transition: background 0.2s; border: 1px solid transparent;
     }
     .visitor-item:hover { background: #f1f5f9; }
-    .visitor-item input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+    .visitor-item input { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
     .visitor-item span { font-size: 13px; font-weight: 600; color: #334155; }
     .visitor-item.checked { background: #eff6ff; border-color: #3b82f6; }
 
@@ -120,7 +145,6 @@
     }
     .btn-run:disabled { background: #94a3b8; cursor: not-allowed; }
 
-    /* 진행 표시 */
     .stage-bar {
       display: none;
       margin-top: 14px;
@@ -131,20 +155,10 @@
       color: #475569;
     }
     .stage-bar.show { display: block; }
-    .stage-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
+    .stage-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .stage-label { font-weight: 600; color: #1a56db; }
     .step-counter { font-size: 11px; color: #94a3b8; font-weight: 600; }
-    .progress-track {
-      height: 5px;
-      background: #e2e8f0;
-      border-radius: 3px;
-      overflow: hidden;
-    }
+    .progress-track { height: 5px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
     .progress-fill {
       height: 100%;
       background: linear-gradient(90deg, #1a56db, #60a5fa);
@@ -163,28 +177,15 @@
     .status.error   { background: #fff1f2; color: #be123c; }
 
     .error-detail-toggle {
-      display: none;
-      margin-top: 8px;
-      font-size: 11px;
-      color: #94a3b8;
-      cursor: pointer;
-      text-decoration: underline;
-      text-align: right;
+      display: none; margin-top: 8px; font-size: 11px;
+      color: #94a3b8; cursor: pointer; text-decoration: underline; text-align: right;
     }
     .error-detail-toggle.show { display: block; }
     .error-detail-box {
-      display: none;
-      margin-top: 8px;
-      padding: 10px 12px;
-      background: #1e293b;
-      color: #94a3b8;
-      border-radius: 8px;
-      font-size: 11px;
-      font-family: monospace;
-      white-space: pre-wrap;
-      word-break: break-all;
-      max-height: 200px;
-      overflow-y: auto;
+      display: none; margin-top: 8px; padding: 10px 12px;
+      background: #1e293b; color: #94a3b8; border-radius: 8px;
+      font-size: 11px; font-family: monospace; white-space: pre-wrap;
+      word-break: break-all; max-height: 200px; overflow-y: auto;
     }
     .error-detail-box.show { display: block; }
 
@@ -228,7 +229,13 @@
   </div>
 
   <div class="card">
-    <!-- 날짜 선택 -->
+    <!-- 탭 네비게이션 -->
+    <div class="tab-nav">
+      <button class="tab-btn active" id="tabBtnSingle" onclick="switchTab('single')">방문신청</button>
+      <button class="tab-btn" id="tabBtnMulti" onclick="switchTab('multi')">인원추가</button>
+    </div>
+
+    <!-- 날짜 선택 (공통) -->
     <div class="card-section">
       <div class="section-label">방문 기간 선택</div>
       <div class="date-row">
@@ -243,10 +250,19 @@
       </div>
     </div>
 
-    <!-- 방문객 선택 -->
-    <div class="card-section">
+    <!-- 방문신청 탭: 단일 선택 -->
+    <div class="card-section tab-panel active" id="panelSingle">
       <div class="section-label">방문객 선택</div>
-      <div class="visitor-grid" id="visitorGrid"></div>
+      <div class="visitor-grid" id="gridSingle"></div>
+    </div>
+
+    <!-- 인원추가 탭: 다중 선택 -->
+    <div class="card-section tab-panel" id="panelMulti">
+      <div class="section-label">
+        방문객 선택
+        <span class="select-all-btn" onclick="toggleAll()">전체 선택/해제</span>
+      </div>
+      <div class="visitor-grid" id="gridMulti"></div>
     </div>
 
     <!-- 고정 정보 + 스크린샷 -->
@@ -257,7 +273,6 @@
         <div class="info-row"><span class="info-key">소속</span><span class="info-val">ASML</span></div>
         <div class="info-row"><span class="info-key">출입지역</span><span class="info-val">상우캠퍼스 어드민동</span></div>
       </div>
-
       <div id="screenshotArea" style="display: none;">
         <p id="screenshotLabel">입력 결과 스크린샷</p>
         <img id="screenshotImg" onclick="window.open(this.src)" title="클릭해서 크게 보기" />
@@ -271,7 +286,6 @@
         <span id="btnText">자동 입력 시작</span>
       </button>
 
-      <!-- 진행 상황 + 프로그레스바 -->
       <div class="stage-bar" id="stageBar">
         <div class="stage-top">
           <span class="stage-label" id="stageLabel">-</span>
@@ -282,7 +296,6 @@
         </div>
       </div>
 
-      <!-- 결과 상태 -->
       <div class="status" id="status">
         <span id="statusIcon" style="flex-shrink:0"></span>
         <span id="statusMsg"></span>
@@ -296,26 +309,58 @@
 </div>
 
 <script>
-  // Worker의 INFO.VISITORS와 순서 동일하게 유지
   const visitorList = [
     "한준석", "최선국", "조영택", "신영재", "이영훈", "강정규",
     "변정호", "김시준", "권이건", "장덕수", "백한빈", "박찬순"
   ];
 
-  // 방문객 라디오 버튼 생성 (단일 선택, value = 인덱스)
-  const grid = document.getElementById('visitorGrid');
+  let activeTab = 'single';
+
+  // 방문신청 탭: 라디오 (단일 선택)
   visitorList.forEach((name, idx) => {
     const div = document.createElement('div');
     div.className = 'visitor-item';
     div.onclick = () => {
       div.querySelector('input').checked = true;
-      document.querySelectorAll('.visitor-item').forEach(el =>
+      document.querySelectorAll('#gridSingle .visitor-item').forEach(el =>
         el.classList.toggle('checked', el.querySelector('input').checked)
       );
     };
     div.innerHTML = `<input type="radio" name="visitor" value="${idx}" onclick="event.stopPropagation()"><span>${name}</span>`;
-    grid.appendChild(div);
+    document.getElementById('gridSingle').appendChild(div);
   });
+
+  // 인원추가 탭: 체크박스 (다중 선택)
+  visitorList.forEach((name, idx) => {
+    const div = document.createElement('div');
+    div.className = 'visitor-item';
+    div.onclick = () => {
+      const cb = div.querySelector('input');
+      cb.checked = !cb.checked;
+      div.classList.toggle('checked', cb.checked);
+    };
+    div.innerHTML = `<input type="checkbox" name="visitorMulti" value="${idx}" onclick="event.stopPropagation()"><span>${name}</span>`;
+    document.getElementById('gridMulti').appendChild(div);
+  });
+
+  function toggleAll() {
+    const items = document.querySelectorAll('#gridMulti .visitor-item');
+    const allChecked = Array.from(items).every(i => i.querySelector('input').checked);
+    items.forEach(div => {
+      const cb = div.querySelector('input');
+      cb.checked = !allChecked;
+      div.classList.toggle('checked', !allChecked);
+    });
+  }
+
+  function switchTab(tab) {
+    activeTab = tab;
+    document.getElementById('panelSingle').classList.toggle('active', tab === 'single');
+    document.getElementById('panelMulti').classList.toggle('active', tab === 'multi');
+    document.getElementById('tabBtnSingle').classList.toggle('active', tab === 'single');
+    document.getElementById('tabBtnMulti').classList.toggle('active', tab === 'multi');
+    document.getElementById('btnText').textContent = tab === 'single' ? '자동 입력 시작' : '인원 추가 시작';
+  }
 
   // 오늘 날짜 초기화
   const today = new Date().toISOString().split('T')[0];
@@ -325,12 +370,9 @@
   // 시작일 변경 시 종료일 자동 동기화
   document.getElementById('startDate').addEventListener('change', function () {
     const endInput = document.getElementById('endDate');
-    if (!endInput.value || endInput.value < this.value) {
-      endInput.value = this.value;
-    }
+    if (!endInput.value || endInput.value < this.value) endInput.value = this.value;
   });
 
-  // Worker 상태 확인
   async function checkHealth() {
     const dot = document.getElementById('healthDot');
     const text = document.getElementById('healthText');
@@ -399,12 +441,10 @@
   function showScreenshot(base64, isError) {
     const area = document.getElementById('screenshotArea');
     const img = document.getElementById('screenshotImg');
-    const label = document.getElementById('screenshotLabel');
-    const note = document.getElementById('screenshotNote');
+    document.getElementById('screenshotLabel').textContent = isError ? '실패 시점 스크린샷' : '입력 결과 스크린샷';
+    document.getElementById('screenshotNote').style.display = isError ? 'none' : 'block';
     img.src = 'data:image/jpeg;base64,' + base64;
     img.className = isError ? 'error-shot' : '';
-    label.textContent = isError ? '실패 시점 스크린샷' : '입력 결과 스크린샷';
-    note.style.display = isError ? 'none' : 'block';
     area.style.display = 'block';
     setTimeout(() => area.scrollIntoView({ behavior: 'smooth' }), 100);
   }
@@ -413,18 +453,18 @@
     const start = document.getElementById('startDate').value;
     const end = document.getElementById('endDate').value;
 
-    // 선택된 방문객 인덱스 (단일 선택)
-    const selectedRadio = document.querySelector('input[name="visitor"]:checked');
+    let visitorIndices;
+    if (activeTab === 'single') {
+      const radio = document.querySelector('input[name="visitor"]:checked');
+      if (!radio) { showStatus('error', '⚠️', '방문객을 선택해주세요.'); return; }
+      visitorIndices = [parseInt(radio.value, 10)];
+    } else {
+      visitorIndices = Array.from(document.querySelectorAll('input[name="visitorMulti"]:checked'))
+        .map(cb => parseInt(cb.value, 10));
+      if (visitorIndices.length === 0) { showStatus('error', '⚠️', '방문객을 한 명 이상 선택해주세요.'); return; }
+    }
 
-    if (!start) {
-      showStatus('error', '⚠️', '방문 시작일을 선택해주세요.');
-      return;
-    }
-    if (!selectedRadio) {
-      showStatus('error', '⚠️', '방문객을 선택해주세요.');
-      return;
-    }
-    const visitorIndices = [parseInt(selectedRadio.value, 10)];
+    if (!start) { showStatus('error', '⚠️', '방문 시작일을 선택해주세요.'); return; }
 
     const btn = document.getElementById('runBtn');
     btn.disabled = true;
@@ -447,7 +487,6 @@
         throw new Error(err.error || res.statusText);
       }
 
-      // SSE 스트리밍 읽기
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
@@ -455,18 +494,15 @@
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
         buffer += decoder.decode(value, { stream: true });
         const chunks = buffer.split('\n\n');
-        buffer = chunks.pop(); // 아직 완성되지 않은 청크 보관
+        buffer = chunks.pop();
 
         for (const chunk of chunks) {
           if (!chunk.startsWith('data: ')) continue;
           let event;
           try { event = JSON.parse(chunk.slice(6)); } catch { continue; }
-
           setProgress(event.msg, event.step, event.total);
-
           if (event.done) {
             if (event.ok) {
               setProgress(null);
@@ -481,7 +517,6 @@
           }
         }
       }
-
     } catch (e) {
       setProgress(null);
       showStatus('error', '❌', '서버 통신 오류가 발생했습니다.');
@@ -489,7 +524,7 @@
     } finally {
       btn.disabled = false;
       document.getElementById('btnIcon').textContent = '🚀';
-      document.getElementById('btnText').textContent = '자동 입력 시작';
+      document.getElementById('btnText').textContent = activeTab === 'single' ? '자동 입력 시작' : '인원 추가 시작';
     }
   }
 
