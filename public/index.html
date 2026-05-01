@@ -579,11 +579,13 @@
     const radio = document.querySelector('input[name="visitor"]:checked');
     const multiChecked = Array.from(document.querySelectorAll('input[name="visitorMulti"]:checked'));
 
-    let visitorIndices;
+    let visitorIndices, mode;
     if (radio) {
       visitorIndices = [parseInt(radio.value, 10)];
+      mode = 'single';
     } else if (multiChecked.length > 0) {
       visitorIndices = multiChecked.map(c => parseInt(c.value, 10));
+      mode = 'multi';
     } else {
       setStatus('ng', '⚠', '방문신청 또는 인원추가에서 방문객을 선택해주세요.');
       return;
