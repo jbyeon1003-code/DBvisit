@@ -134,8 +134,9 @@
 
     /* ── 방문객 그리드 ── */
     .visitor-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
       gap: 8px;
     }
     .visitor-chip {
@@ -397,14 +398,6 @@
     <div class="section-body">
       <div class="visitor-grid" id="gridMulti"></div>
     </div>
-    <hr class="divider">
-    <div class="section-body" style="padding-top:14px; padding-bottom:16px;">
-      <button class="btn btn-orange btn-full" id="btnMulti" onclick="runAuto('multi')">
-        <span id="iconMulti">▶</span>
-        <span id="textMulti">인원 추가 시작</span>
-      </button>
-    </div>
-
     <div class="progress-wrap" id="progressMulti">
       <div class="progress-top">
         <span class="progress-msg" id="msgMulti">-</span>
