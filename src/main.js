@@ -18,8 +18,8 @@ const INFO = {
   VISITOR_PHONE: "01038020065",
   VISITOR_COMPANY: "ASML",
   MANAGER_NAME: "채명주",
-  MANAGER_DEPT_KOR: "구매팀",
-  MANAGER_DEPT_ENG: "Procurement",
+  MANAGER_DEPT_KOR: "제조기술1팀",
+  MANAGER_DEPT_ENG: "Fab2",
   LOCATION_CODE: "3000",   // 3000 = DB HiTek Sangwoo Cam.
   PLACE_CODE: "4 ",        // 4 = Sangwoo Admin (상우캠퍼스 어드민동)
   PURPOSE_CODE: "0",       // 0 = Meeting
