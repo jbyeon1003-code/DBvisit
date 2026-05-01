@@ -603,7 +603,7 @@
       const res = await fetch('/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ start, end, visitorIndices }),
+        body: JSON.stringify({ start, end, visitorIndices, mode }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
