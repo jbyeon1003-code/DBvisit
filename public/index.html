@@ -765,9 +765,6 @@
         (cb.required || t.includes('(필수)') || t.includes('필수항목')) && !cb.checked) cb.click();
   });
   await new Promise(r => setTimeout(r, 200));
-  const agreeBtn = Array.from(document.querySelectorAll('button,input[type=button],input[type=submit]'))
-    .find(b => { const t=(b.innerText||b.value||'').trim(); return t==='확인'||t==='OK'||t==='Confirm'; });
-  if (agreeBtn) { agreeBtn.click(); await new Promise(r => setTimeout(r, 500)); }
 
   // 2단계: 회사 선택
   setVal(qs('Location'), INFO.LOCATION_CODE);
