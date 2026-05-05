@@ -957,18 +957,77 @@
     setProgress(null);
   }
 
-  function runAuto() {
+  async function runAuto() {
     const start = document.getElementById('startDate').value;
     const end   = document.getElementById('endDate').value || start;
+
     const selected = getSelectedVisitors();
     if (!selected) { setStatus('ng', '⚠', '방문객을 선택해주세요.'); return; }
-    if (!start) { setStatus('ng', '⚠', '방문 시작일을 선택해주세요.'); return; }
-    const script = buildConsoleScript(selected.single, selected.multi, start, end);
-    navigator.clipboard.writeText(script)
-      .then(() => {
-        showToast('스크립트 복사 완료!');
-        document.getElementById('howTo').className = 'how-to show';
+    if (!start)    { setStatus('ng', '⚠', '방문 시작일을 선택해주세요.'); return; }
+
+    const singleIndex  = selected.single ? VISITORS_DATA.indexOf(selected.single) : null;
+    const extraIndices = selected.multi.map(v => VISITORS_DATA.indexOf(v)).filter(i => i >= 0);
+
+    const btn  = document.getElementById('btnRun');
+    const icon = document.getElementById('runIcon');
+    const text = document.getElementById('runText');
+    btn.disabled = true;
+    icon.innerHTML = '<div class="spin"></div>';
+    text.textContent = '실행 중...';
+    resetUI();
+    setProgress('준비 중...', 0, 5);
+
+    try {
+      const res = await fetch('/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ start, end, singleIndex, extraIndices }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || res.statusText);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const chunks = buf.split('\n\n'); buf = chunks.pop();
+        for (const chunk of chunks) {
+          if (!chunk.startsWith('data: ')) continue;
+          let ev; try { ev = JSON.parse(chunk.slice(6)); } catch { continue; }
+
+          if (ev.done) {
+            if (ev.ok) {
+              setProgress('신청 완료', ev.step, ev.total);
+              setStatus('ok', '✓', ev.msg || '방문신청이 완료되었습니다.');
+            } else {
+              setProgress(null);
+              setStatus('ng', '✕', `[${ev.stage || '-'}] ${ev.error || '오류'}`);
+              if (ev.error) {
+                document.getElementById('errBox').textContent = `단계: ${ev.stage}\n오류: ${ev.error}`;
+                document.getElementById('errToggle').className = 'err-toggle show';
+              }
+            }
+          } else {
+            setProgress(ev.msg, ev.step, ev.total);
+          }
+          if (ev.screenshot && ev.shotKey) showShot(ev.shotKey, ev.screenshot);
+        }
+      }
+    } catch (e) {
+      setProgress(null);
+      setStatus('ng', '✕', '서버 통신 오류');
+      document.getElementById('errBox').textContent = e.message;
+      document.getElementById('errToggle').className = 'err-toggle show';
+    } finally {
+      btn.disabled = false;
+      icon.textContent = '▶';
+      text.textContent = '자동 입력 시작';
+    }
   }
 
   function getSelectedVisitors() {

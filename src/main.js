@@ -15,14 +15,10 @@ const INFO = {
     { name: "백한빈", birth: "1996-08-31", laptop_sn: "PF3YAA2F" },
     { name: "박찬순", birth: "1999-04-07", laptop_sn: "PF4SLTEF" },
   ],
-  VISITOR_PHONE: "01038020065",
   VISITOR_COMPANY: "ASML",
   MANAGER_NAME: "채명주",
-  MANAGER_DEPT_KOR: "제조기술1팀",
-  MANAGER_DEPT_ENG: "Fab2",
-  LOCATION_CODE: "3000",   // 3000 = DB HiTek Sangwoo Cam.
-  PLACE_CODE: "4 ",        // 4 = Sangwoo Admin (상우캠퍼스 어드민동)
-  PURPOSE_CODE: "0",       // 0 = Meeting
+  LOCATION_CODE: "3000",
+  PLACE_CODE: "4 ",
   VISIT_START_HOUR: "9",
   VISIT_START_MINUTE: "0",
   VISIT_END_HOUR: "18",
@@ -30,198 +26,145 @@ const INFO = {
   TARGET_URL: "https://ims.dbhitek.com",
 };
 
-// esbuild가 번들링할 때 __name() 유틸리티를 주입하여 브라우저 컨텍스트에서 오류 발생.
-// page.evaluate(string) 방식은 번들러 변환 없이 브라우저에서 직접 실행되므로 안전.
-
-function buildFillFormScript(runtimeInfo) {
-  const infoJson = JSON.stringify(runtimeInfo).replace(
-    /[^\x00-\x7F]/g,
-    c => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")
-  );
-  return `(async () => {
-    const info = ${infoJson};
-    try {
-      // (필수) 동의만 체크, (선택) 동의는 건드리지 않음
-      Array.from(document.querySelectorAll('input[type="checkbox"]')).forEach(cb => {
-        const container = cb.closest('label,tr,li,div') || cb.parentElement;
-        const text = container ? container.innerText : '';
-        const isOptional = text.includes('(선택)') || text.includes('선택사항');
-        const isRequired = cb.required || text.includes('(필수)') || text.includes('필수항목');
-        if (isRequired && !isOptional && !cb.checked) cb.click();
-      });
-      await new Promise(r => setTimeout(r, 300));
-
-      function setVal(el, value) {
-        if (!el) return false;
-        try {
-          const proto = el.tagName === 'SELECT'
-            ? window.HTMLSelectElement.prototype
-            : el.tagName === 'TEXTAREA'
-              ? window.HTMLTextAreaElement.prototype
-              : window.HTMLInputElement.prototype;
-          const descriptor = Object.getOwnPropertyDescriptor(proto, 'value');
-          if (descriptor && descriptor.set) descriptor.set.call(el, value);
-          else el.value = value;
-        } catch (_) { el.value = value; }
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-        return true;
-      }
-
-      function qs(name) {
-        return Array.from(document.querySelectorAll('input, select, textarea'))
-          .find(el => el.name === name) || null;
-      }
-      function qsAll(name) {
-        return Array.from(document.querySelectorAll('input, select, textarea'))
-          .filter(el => el.name === name);
-      }
-
-      setVal(qs('Location'), info.LOCATION_CODE);
-      await new Promise(r => setTimeout(r, 800));
-      setVal(qs('PlaceCodeID'), info.PLACE_CODE);
-      setVal(qs('ContactName'), info.MANAGER_NAME);
-      setVal(qs('ContactOrgNameKor'), info.MANAGER_DEPT_KOR);
-      setVal(qs('ContactOrgNameEng'), info.MANAGER_DEPT_ENG);
-      setVal(qs('VisitStartDate'), info.VISIT_START_DATE);
-      setVal(qs('VisitStartDateHour'), info.VISIT_START_HOUR);
-      setVal(qs('VisitStartDateMinute'), info.VISIT_START_MINUTE);
-      setVal(qs('VisitEndDate'), info.VISIT_END_DATE);
-      setVal(qs('VisitEndDateHour'), info.VISIT_END_HOUR);
-      setVal(qs('VisitEndDateMinute'), info.VISIT_END_MINUTE);
-      setVal(qs('VisitPurposeCodeID'), info.PURPOSE_CODE);
-
-      // 방문객 행 먼저 모두 추가
-      for (let i = 1; i < info.VISITORS.length; i++) {
-        const addBtn = Array.from(document.querySelectorAll('button, a')).find(b => {
-          const t = (b.innerText || '').trim();
-          return t === 'Add Visitor' || t === '방문객 추가' || t === '방문객추가';
-        });
-        if (addBtn) { addBtn.click(); await new Promise(r => setTimeout(r, 600)); }
-      }
-
-      // Name[] 제외한 방문객 필드 채우기 (생년월일은 개인별 적용)
-      const birthInputs   = qsAll('BirthDate[]');
-      const mobileInputs  = qsAll('Mobile[]');
-      const companyInputs = qsAll('CompanyName[]');
-      for (let i = 0; i < info.VISITORS.length; i++) {
-        setVal(birthInputs[i],   info.VISITORS[i].birth);
-        setVal(mobileInputs[i],  info.VISITOR_PHONE);
-        setVal(companyInputs[i], info.VISITOR_COMPANY);
-      }
-
-      return { success: true, error: null, rowCount: qsAll('Name[]').length };
-    } catch (e) {
-      return { success: false, error: e.message };
-    }
-  })()`;
-}
-
-function buildFillNamesScript(visitors) {
-  function jsStr(s) {
-    return '"' + s.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n") + '"';
+// 콘솔 스크립트와 동일한 로직을 page.evaluate(string)으로 실행
+// page.evaluate(function(){}) 방식은 esbuild가 __name 헬퍼를 주입해 오류 발생
+// page.evaluate(string) 방식은 번들러 변환 없이 브라우저에서 직접 실행
+function buildScript(visitors, startDate, endDate) {
+  function esc(obj) {
+    return JSON.stringify(obj).replace(/[^\x00-\x7F]/g, c =>
+      '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0')
+    );
   }
-  const visitorLiterals = "[" + visitors.map(jsStr).join(", ") + "]";
-  return `(() => {
-    const visitors = ${visitorLiterals};
-    const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
-    const nameInputs = Array.from(document.querySelectorAll('input, select, textarea'))
-      .filter(el => el.name === 'Name[]');
-    for (let i = 0; i < visitors.length; i++) {
-      if (nameInputs[i]) nativeSetter.set.call(nameInputs[i], visitors[i]);
-    }
-  })()`;
-}
+  const V = esc(visitors);
+  const I = esc({
+    LOCATION_CODE: INFO.LOCATION_CODE,
+    PLACE_CODE: INFO.PLACE_CODE,
+    MANAGER_NAME: INFO.MANAGER_NAME,
+    VISITOR_COMPANY: INFO.VISITOR_COMPANY,
+    VISIT_START_DATE: startDate,
+    VISIT_END_DATE: endDate,
+    VISIT_START_HOUR: INFO.VISIT_START_HOUR,
+    VISIT_START_MINUTE: INFO.VISIT_START_MINUTE,
+    VISIT_END_HOUR: INFO.VISIT_END_HOUR,
+    VISIT_END_MINUTE: INFO.VISIT_END_MINUTE,
+  });
 
-// 휴대물품 섹션에 노트북 S/N 입력
-// laptopVisitors: [{name, birth, laptop_sn}, ...] (laptop_sn이 null이 아닌 것만)
-function buildEquipmentScript(laptopVisitors) {
-  const json = JSON.stringify(laptopVisitors).replace(
-    /[^\x00-\x7F]/g,
-    c => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0")
-  );
   return `(async () => {
-    const visitors = ${json};
-    const ITEM_NAME = '노트북'; // 노트북
+  const V = ${V};
+  const I = ${I};
 
-    try {
-      function setVal(el, value) {
-        if (!el) return false;
-        try {
-          const proto = el.tagName === 'SELECT'
-            ? window.HTMLSelectElement.prototype
-            : window.HTMLInputElement.prototype;
-          const d = Object.getOwnPropertyDescriptor(proto, 'value');
-          if (d && d.set) d.set.call(el, value);
-          else el.value = value;
-        } catch (_) { el.value = value; }
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-        el.dispatchEvent(new Event('change', { bubbles: true }));
-        return true;
-      }
+  function setVal(el, v) {
+    if (!el) return;
+    el.value = v;
+    el.dispatchEvent(new Event('input',  { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  const qs    = n => Array.from(document.querySelectorAll('input,select,textarea')).find(e => e.name === n);
+  const qsAll = n => Array.from(document.querySelectorAll('input,select,textarea')).filter(e => e.name === n);
 
-      // 1. 휴대물품 체크박스 찾아서 활성화
-      const goodsCb = Array.from(document.querySelectorAll('input[type="checkbox"]')).find(cb => {
-        const container = cb.closest('label,tr,li,div') || cb.parentElement;
-        const text = (container ? container.innerText : '') + ' ' + (cb.id || '') + ' ' + (cb.name || '');
-        return text.includes('휴대물품') || text.includes('반입물품') ||
-               text.toLowerCase().includes('goods') || text.toLowerCase().includes('carry');
-      });
-      if (goodsCb && !goodsCb.checked) {
-        goodsCb.click();
-        await new Promise(r => setTimeout(r, 1000));
-      }
+  try {
+    // 필수 동의 체크
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      const p = cb.closest('label,tr,li,div') || cb.parentElement;
+      const t = p ? p.innerText : '';
+      if (!t.includes('(선택)') && !t.includes('선택사항') &&
+          (cb.required || t.includes('(필수)') || t.includes('필수항목')) && !cb.checked) cb.click();
+    });
+    await new Promise(r => setTimeout(r, 200));
 
-      // 디버그: 현재 페이지의 모든 입력 필드 수집
-      const allFields = Array.from(document.querySelectorAll('input:not([type=hidden]),select,textarea'))
-        .filter(el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; })
-        .map(el => ({ name: el.name, id: el.id, placeholder: el.placeholder, type: el.type }));
+    setVal(qs('Location'), I.LOCATION_CODE);
+    await new Promise(r => setTimeout(r, 400));
 
-      // 2. 각 방문객별 물품 행 추가 및 입력
-      for (let i = 0; i < visitors.length; i++) {
-        if (i > 0) {
-          // 물품 추가 버튼
-          const addBtn = Array.from(document.querySelectorAll('button,a,input[type=button]')).find(b => {
-            const t = (b.innerText || b.value || '').trim();
-            return t === '추가' ||
-                   t.includes('물품') ||
-                   t.toLowerCase() === 'add' ||
-                   t.toLowerCase().includes('add item') ||
-                   t.toLowerCase().includes('add goods');
-          });
-          if (addBtn) { addBtn.click(); await new Promise(r => setTimeout(r, 600)); }
-        }
+    setVal(qs('VisitStartDate'),       I.VISIT_START_DATE);
+    setVal(qs('VisitStartDateHour'),   I.VISIT_START_HOUR);
+    setVal(qs('VisitStartDateMinute'), I.VISIT_START_MINUTE);
+    setVal(qs('VisitEndDate'),         I.VISIT_END_DATE);
+    setVal(qs('VisitEndDateHour'),     I.VISIT_END_HOUR);
+    setVal(qs('VisitEndDateMinute'),   I.VISIT_END_MINUTE);
 
-        // 물품명 필드 탐색 (name 또는 placeholder 기반)
-        const allInputs = Array.from(document.querySelectorAll('input:not([type=hidden]),select'));
-        const goodsNameInputs = allInputs.filter(el => {
-          const n = (el.name || '').toLowerCase();
-          const p = (el.placeholder || '').toLowerCase();
-          return n.includes('goodsname') || n.includes('goodname') || n.includes('itemname') ||
-                 n.includes('carryname') || n.includes('goods_name') || n.includes('product') ||
-                 p.includes('물품명') || p.includes('item name') || p.includes('product name');
-        });
-
-        // S/N 필드 탐색
-        const snInputs = allInputs.filter(el => {
-          const n = (el.name || '').toLowerCase();
-          const p = (el.placeholder || '').toLowerCase();
-          return n === 'sn' || n.includes('serialno') || n.includes('serial_no') ||
-                 n.includes('serialnum') || n.includes('goods_sn') || n.includes('goodssn') ||
-                 n.includes('snumber') || n.includes('s_n') ||
-                 p === 's/n' || p.includes('serial') || p.includes('시리얼') ||
-                 p.includes('일련번호');
-        });
-
-        setVal(goodsNameInputs[i], ITEM_NAME);
-        setVal(snInputs[i], visitors[i].laptop_sn);
-      }
-
-      return { success: true, count: visitors.length, allFields };
-    } catch (e) {
-      return { success: false, error: e.message };
+    // 담당자 검색 팝업
+    document.querySelector('input[name="ContactName"]')?.click();
+    await new Promise(r => setTimeout(r, 500));
+    const nameInp = document.querySelector('#popSelectPerson input[name="Name"]');
+    if (nameInp) {
+      nameInp.focus();
+      nameInp.value = I.MANAGER_NAME;
+      nameInp.dispatchEvent(new Event('input',  { bubbles: true }));
+      nameInp.dispatchEvent(new Event('change', { bubbles: true }));
     }
-  })()`;
+    document.querySelector('button[onclick="searchPerson();"]')?.click();
+    await new Promise(r => setTimeout(r, 1500));
+    const personRow = Array.from(document.querySelectorAll('#dvSearchPersonList tbody tr'))
+      .find(r => r.innerText.includes(I.MANAGER_NAME));
+    if (personRow) (personRow.querySelector('a') || personRow.querySelector('td') || personRow).click();
+    await new Promise(r => setTimeout(r, 500));
+
+    setVal(qs('PlaceCodeID'), I.PLACE_CODE);
+    const purposeSel = qs('VisitPurposeCodeID');
+    if (purposeSel) {
+      const opt = Array.from(purposeSel.options).find(o =>
+        o.text.includes('공사') || o.text.includes('수리') || o.text.toLowerCase().includes('setup')
+      );
+      if (opt) setVal(purposeSel, opt.value);
+    }
+
+    // 방문객 입력
+    for (let i = 0; i < V.length; i++) {
+      const nameInputs = qsAll('Name[]');
+      if (nameInputs[i]) {
+        nameInputs[i].focus();
+        nameInputs[i].value = V[i].name;
+        nameInputs[i].dispatchEvent(new Event('input',  { bubbles: true }));
+        nameInputs[i].dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      const births = qsAll('BirthDate[]');
+      setVal(births[i], V[i].birth);
+      const cell = births[i] && (births[i].closest('tr,td,div,li') || births[i].parentElement);
+      const confirmBtn = cell && Array.from(cell.querySelectorAll('button,input[type=button],a')).find(b => {
+        const t = (b.innerText || b.value || '').trim();
+        return t === '확인' || t === 'Confirm' || t === 'Check';
+      });
+      if (confirmBtn) { confirmBtn.click(); await new Promise(r => setTimeout(r, 500)); }
+      const cos = qsAll('CompanyName[]');
+      setVal(cos[i], I.VISITOR_COMPANY);
+    }
+
+    // 노트북 휴대물품
+    const withLaptop = V.filter(v => v.laptop_sn);
+    if (withLaptop.length > 0) {
+      if (typeof goCarryItem === 'function') goCarryItem(0);
+      await new Promise(r => setTimeout(r, 1500));
+      for (let i = 0; i < withLaptop.length; i++) {
+        const allNames = document.querySelectorAll('input[name="ItemName"]');
+        const last = allNames.length - 1;
+        if (allNames[last]) {
+          setVal(allNames[last], '노트북');
+          setVal(document.querySelectorAll('input[name="ItemSN"]')[last], withLaptop[i].laptop_sn);
+          setVal(document.querySelectorAll('input[name="Quantity"]')[last], '1');
+        }
+        await new Promise(r => setTimeout(r, 400));
+        if (i < withLaptop.length - 1) {
+          (document.getElementById('btn-add-carryitem') || document.querySelector('[onclick*="addCarryItem"]'))?.click();
+          await new Promise(r => setTimeout(r, 600));
+        } else {
+          document.querySelector('.pop-btn-green')?.click();
+        }
+      }
+    }
+
+    // 신청 버튼 클릭
+    await new Promise(r => setTimeout(r, 1000));
+    const submitBtn = Array.from(document.querySelectorAll('button,input[type=submit]')).find(el => {
+      const t = (el.innerText || el.value || '').trim();
+      return t === '신청' || t === 'Apply' || (el.type === 'submit' && t.includes('신청'));
+    });
+    if (submitBtn) { submitBtn.scrollIntoView({ behavior: 'smooth', block: 'center' }); submitBtn.click(); }
+
+    return { ok: true, count: V.length };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+})()`;
 }
 
 async function takeScreenshot(page) {
@@ -240,7 +183,6 @@ async function takeScreenshot(page) {
   }
 }
 
-// 429 rate limit 시 최대 3회 재시도 (3s → 6s → 9s 대기)
 async function launchBrowser(myBrowser, onRetry) {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
@@ -272,22 +214,16 @@ export default {
 
     // ── /health ──────────────────────────────────────────────────
     if (path === "/health") {
-      return jsonRes({
-        ok: true,
-        browser_ok: !!env.MY_BROWSER,
-        assets_ok: !!env.ASSETS,
-      });
+      return jsonRes({ ok: true, browser_ok: !!env.MY_BROWSER, assets_ok: !!env.ASSETS });
     }
 
     // ── /debug ───────────────────────────────────────────────────
     if (path === "/debug") {
-      let browser = null;
-      let page = null;
+      let browser = null, page = null;
       try {
         browser = await launchBrowser(env.MY_BROWSER);
         page = await browser.newPage();
         await page.setViewport({ width: 1280, height: 900 });
-
         await page.goto(INFO.TARGET_URL, { waitUntil: "networkidle0", timeout: 20000 });
         await page.waitForTimeout(1500);
         const shot1 = await takeScreenshot(page);
@@ -295,177 +231,58 @@ export default {
         const clickResult = await page.evaluate(`(() => {
           const btn = Array.from(document.querySelectorAll('button, a')).find(b => {
             const t = (b.innerText || '').trim();
-            return t === '방문신청' || t === 'Apply Visit';
+            return (t === '방문신청' || t === 'Apply Visit') && t.length <= 10;
           });
-          if (btn) {
-            btn.scrollIntoView({ behavior: 'instant', block: 'center' });
-            btn.click();
-            return { clicked: true, text: btn.innerText.trim(), tag: btn.tagName };
-          }
-          const candidates = Array.from(document.querySelectorAll('button, a'))
-            .map(b => (b.innerText || '').trim())
-            .filter(t => t.length > 0 && t.length < 60);
-          return { clicked: false, candidates };
+          if (btn) { btn.scrollIntoView({ behavior: 'instant', block: 'center' }); btn.click(); return { clicked: true, text: btn.innerText.trim() }; }
+          return { clicked: false, candidates: Array.from(document.querySelectorAll('button,a')).map(b => (b.innerText||'').trim()).filter(t => t.length > 0 && t.length < 60) };
         })()`);
 
-        await page.waitForTimeout(2500);
+        await page.waitForTimeout(3000);
         const shot2 = await takeScreenshot(page);
-        const url2 = page.url();
-
         const visibleInputs = await page.evaluate(`(() =>
-          Array.from(document.querySelectorAll('input:not([type=hidden]), select, textarea'))
-            .filter(i => {
-              const r = i.getBoundingClientRect();
-              return r.width > 0 && r.height > 0;
-            })
-            .map(i => ({
-              tag: i.tagName, type: i.type, id: i.id,
-              name: i.name, placeholder: i.placeholder,
-              options: i.tagName === 'SELECT'
-                ? Array.from(i.options).map(o => ({ val: o.value, text: o.text.trim() })).slice(0, 15)
-                : undefined
-            }))
-        )()`);
-
-        const placeOptionsAfterSangwoo = await page.evaluate(`(() => {
-          const loc = document.querySelector('[name="Location"]');
-          if (!loc) return { error: 'Location select not found' };
-          loc.value = '3000';
-          loc.dispatchEvent(new Event('change', { bubbles: true }));
-          return { locationSet: true };
-        })()`);
-        await page.waitForTimeout(1500);
-        const sangwooPlaceOptions = await page.evaluate(`(() => {
-          const sel = document.querySelector('[name="PlaceCodeID"]');
-          if (!sel) return [];
-          return Array.from(sel.options).map(o => ({ val: o.value, text: o.text.trim() }));
-        })()`);
-
-        const addVisitorResult = await page.evaluate(`(() => {
-          const btn = Array.from(document.querySelectorAll('button, a')).find(b => {
-            const t = (b.innerText || '').trim();
-            return t === 'Add Visitor' || t === '방문객 추가' || t === '방문객추가';
-          });
-          if (btn) { btn.click(); return true; }
-          return false;
-        })()`);
-
-        await page.waitForTimeout(1500);
-        const shot3 = await takeScreenshot(page);
-
-        const visitorFields = await page.evaluate(`(() =>
-          Array.from(document.querySelectorAll('input:not([type=hidden]), select, textarea'))
-            .filter(i => { const r = i.getBoundingClientRect(); return r.width > 0 && r.height > 0; })
-            .map(i => ({
-              tag: i.tagName, type: i.type, id: i.id,
-              name: i.name, placeholder: i.placeholder,
-              options: i.tagName === 'SELECT'
-                ? Array.from(i.options).map(o => ({ val: o.value, text: o.text.trim() })).slice(0, 10)
-                : undefined
-            }))
+          Array.from(document.querySelectorAll('input:not([type=hidden]),select,textarea'))
+            .filter(el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; })
+            .map(el => ({ tag: el.tagName, type: el.type, id: el.id, name: el.name, placeholder: el.placeholder }))
         )()`);
 
         await browser.close();
-        return jsonRes({
-          step1_initial: { screenshot: shot1 },
-          step2_after_apply_visit: { url: url2, clickResult, visibleInputs, screenshot: shot2 },
-          step2b_sangwoo_place_options: { placeOptionsAfterSangwoo, sangwooPlaceOptions },
-          step3_after_add_visitor: { addVisitorClicked: addVisitorResult, visitorFields, screenshot: shot3 },
-        });
+        return jsonRes({ shot1, clickResult, shot2, visibleInputs });
       } catch (e) {
         if (browser) try { await browser.close(); } catch {}
         return jsonRes({ error: `${e.constructor.name}: ${e.message}` });
       }
     }
 
-    // ── /debug-goods: 휴대물품 섹션 구조 탐색 ─────────────────────
+    // ── /debug-goods ─────────────────────────────────────────────
     if (path === "/debug-goods") {
-      let browser = null;
-      let page = null;
+      let browser = null, page = null;
       try {
         browser = await launchBrowser(env.MY_BROWSER);
         page = await browser.newPage();
         await page.setViewport({ width: 1280, height: 900 });
-
         await page.goto(INFO.TARGET_URL, { waitUntil: "networkidle0", timeout: 20000 });
         await page.waitForTimeout(1500);
-
-        // 방문신청 클릭
         await page.evaluate(`(() => {
-          const btn = Array.from(document.querySelectorAll('button, a')).find(b => {
-            const t = (b.innerText || '').trim();
-            return t === '방문신청' || t === 'Apply Visit';
+          const btn = Array.from(document.querySelectorAll('button,a')).find(b => {
+            const t = (b.innerText||'').trim();
+            return (t==='방문신청'||t==='Apply Visit') && t.length <= 10;
           });
-          if (btn) { btn.scrollIntoView({ behavior: 'instant', block: 'center' }); btn.click(); }
+          if (btn) { btn.scrollIntoView({behavior:'instant',block:'center'}); btn.click(); }
         })()`);
         await page.waitForTimeout(3000);
-
         const shot1 = await takeScreenshot(page);
-
-        // 페이지 전체 텍스트에서 휴대물품 관련 요소 탐색
-        const goodsAnalysis = await page.evaluate(`(() => {
-          // 모든 체크박스와 주변 텍스트 수집
+        const analysis = await page.evaluate(`(() => {
           const checkboxes = Array.from(document.querySelectorAll('input[type="checkbox"]')).map(cb => {
-            const container = cb.closest('label,tr,li,div') || cb.parentElement;
-            return {
-              id: cb.id, name: cb.name, checked: cb.checked,
-              labelText: container ? container.innerText.trim().slice(0, 100) : ''
-            };
+            const c = cb.closest('label,tr,li,div') || cb.parentElement;
+            return { id: cb.id, name: cb.name, checked: cb.checked, label: c ? c.innerText.trim().slice(0,100) : '' };
           });
-
-          // 모든 버튼/링크 텍스트 수집
-          const buttons = Array.from(document.querySelectorAll('button,a,input[type=button]'))
-            .map(b => ({ tag: b.tagName, text: (b.innerText || b.value || '').trim(), id: b.id, class: b.className }))
-            .filter(b => b.text.length > 0 && b.text.length < 80);
-
-          // 모든 visible 입력 필드
           const inputs = Array.from(document.querySelectorAll('input:not([type=hidden]),select,textarea'))
             .filter(el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; })
-            .map(el => ({ tag: el.tagName, type: el.type, name: el.name, id: el.id, placeholder: el.placeholder }));
-
-          // 페이지에서 '물품', '휴대', 'goods' 텍스트가 포함된 요소
-          const goodsElements = Array.from(document.querySelectorAll('*'))
-            .filter(el => {
-              if (el.children.length > 5) return false;
-              const t = el.innerText || '';
-              return t.includes('물품') || t.includes('휴대') || t.toLowerCase().includes('goods') || t.toLowerCase().includes('carry');
-            })
-            .slice(0, 20)
-            .map(el => ({ tag: el.tagName, id: el.id, class: el.className, text: (el.innerText || '').trim().slice(0, 80) }));
-
-          return { checkboxes, buttons, inputs, goodsElements };
+            .map(el => ({ tag: el.tagName, name: el.name, id: el.id, placeholder: el.placeholder }));
+          return { checkboxes, inputs };
         })()`);
-
-        // 휴대물품 체크박스가 있으면 클릭해서 섹션 활성화
-        const clickedGoods = await page.evaluate(`(() => {
-          const cb = Array.from(document.querySelectorAll('input[type="checkbox"]')).find(c => {
-            const container = c.closest('label,tr,li,div') || c.parentElement;
-            const text = (container ? container.innerText : '') + ' ' + (c.id || '') + ' ' + (c.name || '');
-            return text.includes('휴대물품') || text.includes('반입물품') ||
-                   text.toLowerCase().includes('goods') || text.toLowerCase().includes('carry');
-          });
-          if (cb) { cb.click(); return { found: true, id: cb.id, name: cb.name }; }
-          return { found: false };
-        })()`);
-
-        await page.waitForTimeout(1000);
-        const shot2 = await takeScreenshot(page);
-
-        // 활성화 후 나타난 필드
-        const afterGoodsFields = await page.evaluate(`(() =>
-          Array.from(document.querySelectorAll('input:not([type=hidden]),select,textarea'))
-            .filter(el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; })
-            .map(el => ({ tag: el.tagName, type: el.type, name: el.name, id: el.id, placeholder: el.placeholder }))
-        )()`);
-
         await browser.close();
-        return jsonRes({
-          shot_before_goods: shot1,
-          goods_analysis: goodsAnalysis,
-          clicked_goods_checkbox: clickedGoods,
-          shot_after_goods: shot2,
-          fields_after_goods_enabled: afterGoodsFields,
-        });
+        return jsonRes({ shot1, analysis });
       } catch (e) {
         if (browser) try { await browser.close(); } catch {}
         return jsonRes({ error: `${e.constructor.name}: ${e.message}` });
@@ -475,32 +292,25 @@ export default {
     // ── /run ─────────────────────────────────────────────────────
     if (path === "/run" && request.method === "POST") {
       const body = await request.json();
-      const { start: startDate, end: rawEndDate, visitorIndices, mode } = body;
+      const { start: startDate, end: rawEndDate, singleIndex, extraIndices } = body;
 
-      if (!startDate) {
-        return jsonRes({ ok: false, error: "방문시작일이 누락되었습니다." });
-      }
-      if (!Array.isArray(visitorIndices) || visitorIndices.length === 0) {
-        return jsonRes({ ok: false, error: "visitorIndices(방문객 인덱스 배열)가 누락되었습니다." });
-      }
+      if (!startDate) return jsonRes({ ok: false, error: "방문시작일이 누락되었습니다." });
 
       const endDate = rawEndDate && rawEndDate >= startDate ? rawEndDate : startDate;
-      const selectedVisitors = visitorIndices.map(i => INFO.VISITORS[i]).filter(Boolean);
-      if (selectedVisitors.length === 0) {
-        return jsonRes({ ok: false, error: "유효한 방문객 인덱스가 없습니다." });
-      }
+      const visitors = [
+        singleIndex != null ? INFO.VISITORS[singleIndex] : null,
+        ...(Array.isArray(extraIndices) ? extraIndices.map(i => INFO.VISITORS[i]) : []),
+      ].filter(Boolean);
 
-      const isMulti = mode === 'multi';
-      const laptopVisitors = isMulti ? selectedVisitors.filter(v => v.laptop_sn) : [];
+      if (visitors.length === 0) return jsonRes({ ok: false, error: "유효한 방문객이 없습니다." });
 
-      // SSE 스트리밍
       const { readable, writable } = new TransformStream();
       const writer = writable.getWriter();
       const enc = new TextEncoder();
+      const TOTAL = 5;
 
-      const TOTAL_STEPS = isMulti ? 7 : 5;
       const send = async (step, msg, extra = {}) => {
-        const line = JSON.stringify({ step, total: TOTAL_STEPS, msg, ...extra });
+        const line = JSON.stringify({ step, total: TOTAL, msg, ...extra });
         await writer.write(enc.encode(`data: ${line}\n\n`));
       };
 
@@ -521,74 +331,50 @@ export default {
           await page.goto(INFO.TARGET_URL, { waitUntil: "networkidle0", timeout: 20000 });
           await page.waitForTimeout(1000);
 
+          // 교육/공지 팝업 닫기
+          await page.evaluate(`(() => {
+            const closeEl = Array.from(document.querySelectorAll('button,a,[class*=close],[id*=close]')).find(el => {
+              const t = (el.innerText||'').trim();
+              const c = (el.className||'') + (el.id||'');
+              return t==='닫기'||t==='Close'||t==='\xd7'||c.toLowerCase().includes('close');
+            });
+            if (closeEl) closeEl.click();
+          })()`);
+          await page.waitForTimeout(500);
+
           stage = "방문신청 버튼 클릭";
           await send(3, "방문신청 버튼 클릭 중...");
           const clicked = await page.evaluate(`(() => {
-            const btn = Array.from(document.querySelectorAll('button, a')).find(b => {
-              const t = (b.innerText || '').trim();
-              return t === '방문신청' || t === 'Apply Visit';
+            const btn = Array.from(document.querySelectorAll('button,a')).find(b => {
+              const t = (b.innerText||'').trim();
+              return (t==='방문신청'||t==='Apply Visit') && t.length <= 10;
             });
-            if (btn) { btn.scrollIntoView({ behavior: 'instant', block: 'center' }); btn.click(); return true; }
+            if (btn) { btn.scrollIntoView({behavior:'instant',block:'center'}); btn.click(); return true; }
             return false;
           })()`);
-          if (!clicked) throw new Error("'방문신청'/'Apply Visit' 버튼 미발견");
+          if (!clicked) throw new Error("'방문신청' 버튼 미발견");
           await page.waitForTimeout(3000);
 
-          stage = "방문객 정보 입력";
-          await send(4, `방문객 정보 입력 중... (${selectedVisitors.length}명)`);
-          const runtimeInfo = {
-            ...INFO,
-            VISITORS: selectedVisitors,
-            VISIT_START_DATE: startDate,
-            VISIT_END_DATE: endDate,
-          };
-          const result = await page.evaluate(buildFillFormScript(runtimeInfo));
-          if (!result.success) throw new Error(result.error);
-          await page.evaluate(buildFillNamesScript(selectedVisitors.map(v => v.name)));
+          const shot3 = await takeScreenshot(page);
+          await send(3, "방문신청 버튼 클릭 완료", { screenshot: shot3, shotKey: "apply" });
 
-          // 인원추가 모드: 휴대물품 섹션 입력
-          if (isMulti && laptopVisitors.length > 0) {
-            stage = "휴대물품 입력";
-            await send(5, `휴대물품 입력 중... (노트북 ${laptopVisitors.length}대)`);
-            const eqResult = await page.evaluate(buildEquipmentScript(laptopVisitors));
-            console.log(`[equipment] result: ${JSON.stringify(eqResult)}`);
-            if (!eqResult.success) {
-              // 실패해도 방문객 입력은 완료됐으므로 경고만
-              console.error(`[equipment] failed: ${eqResult.error}`);
-            }
+          stage = "양식 자동 입력";
+          await send(4, `양식 자동 입력 중... (${visitors.length}명)`);
+          const result = await page.evaluate(buildScript(visitors, startDate, endDate));
 
-            stage = "스크린샷 (휴대물품)";
-            await send(6, "휴대물품 입력 결과 확인 중...");
-          } else if (isMulti) {
-            await send(5, "휴대물품 정보 없음, 건너뜀...");
-            await send(6, "스크린샷 촬영 중...");
-          }
-
-          stage = "완료";
-          await send(isMulti ? 7 : 5, "스크린샷 촬영 중...");
-
-          const formState = await page.evaluate(`(() => {
-            const all = Array.from(document.querySelectorAll('input, select, textarea'));
-            const get = name => { const el = all.find(e => e.name === name); return el ? el.value : null; };
-            const getAll = name => all.filter(e => e.name === name).map(e => e.value);
-            return {
-              Location: get('Location'),
-              PlaceCodeID: get('PlaceCodeID'),
-              ContactName: get('ContactName'),
-              VisitStartDate: get('VisitStartDate'),
-              VisitEndDate: get('VisitEndDate'),
-              Names: getAll('Name[]'),
-              BirthDates: getAll('BirthDate[]'),
-            };
-          })()`);
+          if (!result || !result.ok) throw new Error(result?.error || "스크립트 실행 실패");
 
           const screenshot = await takeScreenshot(page);
-          await send(TOTAL_STEPS, "완료!", { done: true, ok: true, formState, screenshot });
+          await send(5, "신청 완료!", {
+            done: true, ok: true,
+            msg: `방문신청 완료 (${visitors.map(v => v.name).join(', ')})`,
+            screenshot, shotKey: "final",
+          });
 
         } catch (e) {
           console.error(`[ERROR] ${stage}: ${e.message}`);
           const screenshot = page ? await takeScreenshot(page) : null;
-          await send(0, `오류: ${e.message}`, { done: true, ok: false, stage, error: e.message, screenshot });
+          await send(0, `오류: ${e.message}`, { done: true, ok: false, stage, error: e.message, screenshot, shotKey: "error" });
         } finally {
           if (browser) try { await browser.close(); } catch {}
           await writer.close();
