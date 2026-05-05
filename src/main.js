@@ -155,8 +155,8 @@ function buildScript(visitors, startDate, endDate) {
     // 신청 버튼 클릭
     await new Promise(r => setTimeout(r, 1000));
     const submitBtn = Array.from(document.querySelectorAll('button,input[type=submit]')).find(el => {
-      const t = (el.innerText || el.value || '').trim();
-      return t === '신청' || t === 'Apply' || (el.type === 'submit' && t.includes('신청'));
+      const t = (el.innerText || el.value || '').replace(/\s+/g, ' ').trim();
+      return t === '신청' || t === 'Apply' || t === 'Application' || (el.type === 'submit' && t.includes('신청'));
     });
     if (submitBtn) { submitBtn.scrollIntoView({ behavior: 'smooth', block: 'center' }); submitBtn.click(); }
 

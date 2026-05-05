@@ -1169,8 +1169,8 @@
   console.log('✅ 입력 완료:', V.map(v=>v.name).join(', '));
   setTimeout(() => {
     const btn = Array.from(document.querySelectorAll('button, input[type=submit]')).find(el => {
-      const t = (el.innerText || el.value || '').trim();
-      return t === '신청' || t === 'Apply' || (el.type === 'submit' && t.includes('신청'));
+      const t = (el.innerText || el.value || '').replace(/\s+/g, ' ').trim();
+      return t === '신청' || t === 'Apply' || t === 'Application' || (el.type === 'submit' && t.includes('신청'));
     });
     if (btn) { btn.scrollIntoView({ behavior: 'smooth', block: 'center' }); btn.click(); }
   }, 1000);
