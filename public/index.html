@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- v2.2 -->
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
@@ -55,6 +56,41 @@
       border-radius: 10px;
     }
     .h-title { font-size: 15px; font-weight: 600; color: #fff; }
+    .h-version {
+      font-size: 10px; font-weight: 600;
+      color: rgba(255,255,255,.5); letter-spacing: .5px;
+      margin-left: 2px; cursor: pointer;
+      text-decoration: underline dotted rgba(255,255,255,.3);
+    }
+    .h-version:hover { color: rgba(255,255,255,.85); }
+    .changelog-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.45); z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .changelog-backdrop.show { display: flex; }
+    .changelog-box {
+      background: var(--surface); border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.2);
+      width: min(480px, 92vw); max-height: 70vh;
+      overflow-y: auto; padding: 24px;
+    }
+    .changelog-title {
+      font-size: 15px; font-weight: 700; color: var(--text);
+      margin-bottom: 16px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .changelog-close {
+      font-size: 18px; cursor: pointer; color: var(--muted);
+      line-height: 1; background: none; border: none; padding: 0;
+    }
+    .changelog-close:hover { color: var(--text); }
+    .cl-version { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; margin-top: 14px; }
+    .cl-version:first-child { margin-top: 0; }
+    .cl-tag { font-size: 11px; font-weight: 700; background: var(--green); color: #fff; padding: 2px 8px; border-radius: 10px; flex-shrink: 0; }
+    .cl-tag.orange { background: var(--orange); }
+    .cl-date { font-size: 11px; color: var(--muted); }
+    .cl-items { margin: 4px 0 0 0; padding-left: 16px; list-style: disc; color: var(--text); font-size: 12px; line-height: 1.8; }
     .h-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
     .h-dot { width: 6px; height: 6px; border-radius: 50%; background: #4a5568; transition: background .3s; }
     .h-dot.ok    { background: #48bb78; }
@@ -347,6 +383,7 @@
 <header class="app-header">
   <span class="h-badge">DB HiTek</span>
   <span class="h-title">방문신청 자동화</span>
+  <span class="h-version" onclick="toggleChangelog()">v2.2</span>
   <div class="h-right">
     <span class="h-dot" id="hDot"></span>
     <span class="h-status" id="hStatus">-</span>
@@ -461,6 +498,55 @@
   <p class="footer">내용 확인 후 신청 버튼은 직접 눌러주세요.</p>
 </div>
 
+<!-- Changelog modal -->
+<div class="changelog-backdrop" id="changelogBackdrop" onclick="toggleChangelog(event)">
+  <div class="changelog-box">
+    <div class="changelog-title">
+      업데이트 내역
+      <button class="changelog-close" onclick="toggleChangelog()">✕</button>
+    </div>
+
+    <div class="cl-version">
+      <span class="cl-tag">v2.2</span>
+      <span class="cl-date">2026-05-03</span>
+    </div>
+    <ul class="cl-items">
+      <li>모바일 화면 최적화 (≤480px 반응형 레이아웃)</li>
+      <li>터치 타겟 확대 (칩·인풋·버튼)</li>
+      <li>새 인원 추가 폼 모바일 1열 스택</li>
+      <li>360px 이하 극소형 화면 대응</li>
+    </ul>
+
+    <div class="cl-version">
+      <span class="cl-tag">v2.1</span>
+      <span class="cl-date">2026-05-03</span>
+    </div>
+    <ul class="cl-items">
+      <li>휴대물품 복수 추가 버그 수정 (마지막 행 기준 입력)</li>
+    </ul>
+
+    <div class="cl-version">
+      <span class="cl-tag">v2.0</span>
+      <span class="cl-date">2026-05-03</span>
+    </div>
+    <ul class="cl-items">
+      <li>방문신청 / 인원추가 탭 분리</li>
+      <li>노트북 S/N 자동 입력 (인원추가 모드)</li>
+      <li>DBHiTek 디자인 리뉴얼</li>
+    </ul>
+
+    <div class="cl-version">
+      <span class="cl-tag">v1.0</span>
+      <span class="cl-date">2026-05-02</span>
+    </div>
+    <ul class="cl-items">
+      <li>방문신청 자동화 최초 릴리즈</li>
+      <li>브라우저 콘솔 스크립트 1~7단계</li>
+      <li>방문객 선택 · 날짜 · 담당자 자동 입력</li>
+    </ul>
+  </div>
+</div>
+
 <script>
   const VISITORS = [
     "한준석","최선국","조영택","신영재","이영훈","강정규",
@@ -508,6 +594,11 @@
     const end = document.getElementById('endDate');
     if (!end.value || end.value < this.value) end.value = this.value;
   });
+
+  function toggleChangelog(e) {
+    if (e && e.target !== document.getElementById('changelogBackdrop')) return;
+    document.getElementById('changelogBackdrop').classList.toggle('show');
+  }
 
   // 헬스체크
   async function checkHealth() {
