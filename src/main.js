@@ -152,14 +152,6 @@ function buildScript(visitors, startDate, endDate) {
       }
     }
 
-    // 신청 버튼 클릭
-    await new Promise(r => setTimeout(r, 1000));
-    const submitBtn = Array.from(document.querySelectorAll('button,input[type=submit]')).find(el => {
-      const t = (el.innerText || el.value || '').replace(/\s+/g, ' ').trim();
-      return t === '신청' || t === 'Apply' || t === 'Application' || (el.type === 'submit' && t.includes('신청'));
-    });
-    if (submitBtn) { submitBtn.scrollIntoView({ behavior: 'smooth', block: 'center' }); submitBtn.click(); }
-
     return { ok: true, count: V.length };
   } catch (e) {
     return { ok: false, error: e.message };
@@ -358,26 +350,42 @@ export default {
 
           stage = "양식 자동 입력";
           await send(4, `양식 자동 입력 중... (${visitors.length}명)`);
+          const fillResult = await page.evaluate(buildScript(visitors, startDate, endDate));
+          if (!fillResult || !fillResult.ok) throw new Error(fillResult?.error || "폼 입력 실패");
 
-          let result;
+          // 신청 버튼 클릭 직전 스크린샷 전송
+          const preShot = await takeScreenshot(page);
+          await send(4, "입력 완료 — 신청 버튼 클릭 전", { screenshot: preShot, shotKey: "presubmit" });
+
+          // 신청 버튼 클릭
+          stage = "신청 버튼 클릭";
+          await send(5, "신청 버튼 클릭 중...");
+          let submitOk = false;
           try {
-            result = await page.evaluate(buildScript(visitors, startDate, endDate));
+            submitOk = await page.evaluate(`(() => {
+              const btn = Array.from(document.querySelectorAll('button,input[type=submit]')).find(el => {
+                const t = (el.innerText||el.value||'').replace(/\\s+/g,' ').trim();
+                return t==='신청'||t==='Apply'||t==='Application';
+              });
+              if (btn) { btn.scrollIntoView({behavior:'smooth',block:'center'}); btn.click(); return true; }
+              return false;
+            })()`);
           } catch (e) {
-            // 페이지 이동(신청 완료)으로 evaluate 컨텍스트가 닫히는 정상 케이스
+            // 페이지 이동 = 신청 완료
             if (e.message.includes('Target closed') || e.message.includes('Session closed') || e.message.includes('Execution context')) {
-              result = { ok: true, count: visitors.length, navigated: true };
+              submitOk = true;
             } else {
               throw e;
             }
           }
 
-          if (!result || !result.ok) throw new Error(result?.error || "스크립트 실행 실패");
-
-          const screenshot = await takeScreenshot(page).catch(() => null);
-          await send(5, "신청 완료!", {
-            done: true, ok: true,
-            msg: `방문신청 완료 (${visitors.map(v => v.name).join(', ')})`,
-            screenshot, shotKey: "final",
+          const finalShot = await takeScreenshot(page).catch(() => null);
+          await send(5, submitOk ? "신청 완료!" : "신청 버튼 미발견", {
+            done: true, ok: true, submitOk,
+            msg: submitOk
+              ? `방문신청 완료 (${visitors.map(v => v.name).join(', ')})`
+              : "신청 버튼을 찾을 수 없습니다.",
+            screenshot: finalShot, shotKey: "final",
           });
 
         } catch (e) {

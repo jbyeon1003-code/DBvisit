@@ -778,6 +778,16 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- 신청 결과 팝업 -->
+<div id="resultBackdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none;align-items:center;justify-content:center;">
+  <div id="resultPopup" style="background:#fff;border-radius:16px;padding:40px 48px;text-align:center;max-width:360px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+    <div id="resultIcon" style="font-size:56px;margin-bottom:16px;">✅</div>
+    <div id="resultTitle" style="font-size:22px;font-weight:700;margin-bottom:8px;color:#18243C;"></div>
+    <div id="resultMsg" style="font-size:14px;color:#6B7A9A;margin-bottom:28px;line-height:1.6;"></div>
+    <button onclick="closeResultPopup()" style="background:#00854A;color:#fff;border:none;border-radius:8px;padding:12px 32px;font-size:15px;font-weight:600;cursor:pointer;">확인</button>
+  </div>
+</div>
+
 <script>
   const VISITORS_DATA = [
     { name: "한준석", birth: "1977-01-03", laptop_sn: null },
@@ -1002,8 +1012,9 @@
 
           if (ev.done) {
             if (ev.ok) {
-              setProgress('신청 완료', ev.step, ev.total);
-              setStatus('ok', '✓', ev.msg || '방문신청이 완료되었습니다.');
+              setProgress(ev.submitOk ? '신청 완료' : '신청 버튼 미발견', ev.step, ev.total);
+              setStatus(ev.submitOk ? 'ok' : 'ng', ev.submitOk ? '✓' : '✕', ev.msg || '');
+              showResultPopup(ev.submitOk);
             } else {
               setProgress(null);
               setStatus('ng', '✕', `[${ev.stage || '-'}] ${ev.error || '오류'}`);
@@ -1180,6 +1191,21 @@
   function toggleChangelog(e) {
     if (e && e.target !== document.getElementById('changelogBackdrop')) return;
     document.getElementById('changelogBackdrop').classList.toggle('show');
+  }
+
+  function showResultPopup(success) {
+    const backdrop = document.getElementById('resultBackdrop');
+    document.getElementById('resultIcon').textContent  = success ? '✅' : '❌';
+    document.getElementById('resultTitle').textContent = success ? '신청완료' : '신청실패';
+    document.getElementById('resultTitle').style.color = success ? '#00854A' : '#E53E3E';
+    document.getElementById('resultMsg').textContent   = success
+      ? '방문신청이 성공적으로 완료되었습니다.'
+      : '신청 버튼을 찾지 못했습니다.\n입력 내용을 확인하고 수동으로 신청해주세요.';
+    backdrop.style.display = 'flex';
+  }
+
+  function closeResultPopup() {
+    document.getElementById('resultBackdrop').style.display = 'none';
   }
 
   function showToast(msg) {
