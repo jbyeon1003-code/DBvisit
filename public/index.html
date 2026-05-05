@@ -105,6 +105,56 @@
       transition: background .15s;
     }
     .h-btn:hover { background: rgba(255,255,255,.18); }
+    .h-btn.dbg { border-color: rgba(252,129,74,.5); color: rgba(252,200,150,.9); }
+    .h-btn.dbg:hover { background: rgba(252,129,74,.2); }
+
+    /* ──────── Debug modal ──────── */
+    .dbg-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.55); z-index: 200;
+      align-items: flex-start; justify-content: center;
+      overflow-y: auto; padding: 24px 12px;
+    }
+    .dbg-backdrop.show { display: flex; }
+    .dbg-box {
+      background: var(--surface); border-radius: 14px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.3);
+      width: min(720px, 96vw); padding: 20px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .dbg-head {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 14px; font-weight: 700; color: var(--text);
+    }
+    .dbg-head-btns { display: flex; gap: 8px; margin-left: auto; }
+    .dbg-tab {
+      font-size: 11px; font-weight: 600;
+      padding: 4px 12px; border-radius: 12px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--muted); cursor: pointer; font-family: inherit;
+      transition: all .15s;
+    }
+    .dbg-tab.active { background: var(--green); color: #fff; border-color: var(--green); }
+    .dbg-close {
+      font-size: 18px; color: var(--muted); background: none;
+      border: none; cursor: pointer; padding: 0; line-height: 1;
+    }
+    .dbg-close:hover { color: var(--text); }
+    .dbg-shots { display: flex; flex-direction: column; gap: 10px; }
+    .dbg-shot-label { font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+    .dbg-shot-img { width: 100%; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; display: block; }
+    .dbg-json {
+      font-size: 11px; font-family: monospace;
+      background: #f3f4f6; border-radius: 8px;
+      padding: 12px; max-height: 260px; overflow-y: auto;
+      white-space: pre-wrap; word-break: break-all;
+      color: #374151; border: 1px solid var(--border);
+    }
+    .dbg-spinner {
+      text-align: center; padding: 32px; color: var(--muted);
+      font-size: 13px;
+    }
+    .dbg-err { color: #e53e3e; font-size: 13px; padding: 8px; }
 
     /* ──────── Layout ──────── */
     .wrap {
@@ -387,6 +437,7 @@
   <div class="h-right">
     <span class="h-dot" id="hDot"></span>
     <span class="h-status" id="hStatus">-</span>
+    <button class="h-btn dbg" onclick="openDebug('debug')">디버그</button>
     <button class="h-btn" onclick="checkHealth()">상태 확인</button>
   </div>
 </header>
@@ -498,6 +549,22 @@
   <p class="footer">내용 확인 후 신청 버튼은 직접 눌러주세요.</p>
 </div>
 
+<!-- Debug modal -->
+<div class="dbg-backdrop" id="dbgBackdrop" onclick="if(event.target===this)closeDebug()">
+  <div class="dbg-box">
+    <div class="dbg-head">
+      <span id="dbgTitle">디버그</span>
+      <div class="dbg-head-btns">
+        <button class="dbg-tab active" id="dbgTab0" onclick="openDebug('debug')">메인 흐름</button>
+        <button class="dbg-tab" id="dbgTab1" onclick="openDebug('debug-visitor')">방문객</button>
+        <button class="dbg-tab" id="dbgTab2" onclick="openDebug('debug-goods')">휴대물품</button>
+      </div>
+      <button class="dbg-close" onclick="closeDebug()">✕</button>
+    </div>
+    <div id="dbgBody"><div class="dbg-spinner">버튼을 눌러 디버그를 시작하세요.</div></div>
+  </div>
+</div>
+
 <!-- Changelog modal -->
 <div class="changelog-backdrop" id="changelogBackdrop" onclick="toggleChangelog(event)">
   <div class="changelog-box">
@@ -594,6 +661,71 @@
     const end = document.getElementById('endDate');
     if (!end.value || end.value < this.value) end.value = this.value;
   });
+
+  const DBG_LABELS = { debug: '메인 흐름', 'debug-visitor': '방문객', 'debug-goods': '휴대물품' };
+  const DBG_TAB_IDS = { debug: 'dbgTab0', 'debug-visitor': 'dbgTab1', 'debug-goods': 'dbgTab2' };
+  let dbgCurrentEndpoint = null;
+
+  async function openDebug(endpoint) {
+    document.getElementById('dbgBackdrop').classList.add('show');
+    document.querySelectorAll('.dbg-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(DBG_TAB_IDS[endpoint]).classList.add('active');
+    document.getElementById('dbgTitle').textContent = `디버그 — ${DBG_LABELS[endpoint]}`;
+
+    if (dbgCurrentEndpoint === endpoint) return;
+    dbgCurrentEndpoint = endpoint;
+
+    const body = document.getElementById('dbgBody');
+    body.innerHTML = '<div class="dbg-spinner">⏳ 브라우저 실행 중... (30~60초 소요)</div>';
+
+    try {
+      const res = await fetch(`/${endpoint}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      renderDebug(body, data);
+    } catch(e) {
+      body.innerHTML = `<div class="dbg-err">오류: ${e.message}</div>`;
+      dbgCurrentEndpoint = null;
+    }
+  }
+
+  function renderDebug(container, data) {
+    const shots = [];
+    function findShots(obj, prefix) {
+      if (!obj || typeof obj !== 'object') return;
+      for (const [k, v] of Object.entries(obj)) {
+        if (k === 'screenshot' && typeof v === 'string') shots.push({ label: prefix, src: v });
+        else findShots(v, prefix ? `${prefix} › ${k}` : k);
+      }
+    }
+    findShots(data, '');
+
+    const dataCopy = JSON.parse(JSON.stringify(data));
+    function stripShots(obj) {
+      if (!obj || typeof obj !== 'object') return;
+      for (const k of Object.keys(obj)) {
+        if (k === 'screenshot') obj[k] = '[base64 생략]';
+        else stripShots(obj[k]);
+      }
+    }
+    stripShots(dataCopy);
+
+    let html = '<div class="dbg-shots">';
+    for (const s of shots) {
+      html += `<div><div class="dbg-shot-label">${s.label || '스크린샷'}</div>
+        <img class="dbg-shot-img" src="data:image/jpeg;base64,${s.src}" onclick="window.open(this.src)" title="클릭해서 크게 보기"></div>`;
+    }
+    if (!shots.length) html += '<div class="dbg-shot-label">스크린샷 없음</div>';
+    html += '</div>';
+    html += `<div><div class="dbg-shot-label">응답 데이터</div><div class="dbg-json">${JSON.stringify(dataCopy, null, 2)}</div></div>`;
+    container.innerHTML = html;
+  }
+
+  function closeDebug() {
+    document.getElementById('dbgBackdrop').classList.remove('show');
+    dbgCurrentEndpoint = null;
+    document.getElementById('dbgBody').innerHTML = '<div class="dbg-spinner">버튼을 눌러 디버그를 시작하세요.</div>';
+  }
 
   function toggleChangelog(e) {
     if (e && e.target !== document.getElementById('changelogBackdrop')) return;
