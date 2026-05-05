@@ -688,6 +688,30 @@
     if (!end.value || end.value < this.value) end.value = this.value;
   });
 
+  function copyToClipboard(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+
+  function showToast(msg) {
+    let t = document.getElementById('toastMsg');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'toastMsg';
+      t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;font-size:12px;padding:10px 20px;border-radius:20px;z-index:9999;transition:opacity .3s';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = '1';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.style.opacity = '0'; }, 3000);
+  }
+
   function copyScript() {
     const start = document.getElementById('startDate').value;
     const end   = document.getElementById('endDate').value || start;
@@ -703,17 +727,22 @@
     }
     if (!start) { setStatus('ng', '⚠', '방문 시작일을 선택해주세요.'); return; }
     const script = buildConsoleScript(visitors, start, end);
-    navigator.clipboard.writeText(script)
-      .catch(() => {
-        const ta = document.createElement('textarea');
-        ta.value = script; document.body.appendChild(ta);
-        ta.select(); document.execCommand('copy');
-        document.body.removeChild(ta);
-      })
-      .finally(() => {
-        showToast('스크립트 복사 완료!');
-        document.getElementById('howTo').className = 'how-to show';
-      });
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(script)
+        .then(() => {
+          showToast('스크립트 복사 완료!');
+          document.getElementById('howTo').className = 'how-to show';
+        })
+        .catch(() => {
+          copyToClipboard(script);
+          showToast('스크립트 복사 완료!');
+          document.getElementById('howTo').className = 'how-to show';
+        });
+    } else {
+      copyToClipboard(script);
+      showToast('스크립트 복사 완료!');
+      document.getElementById('howTo').className = 'how-to show';
+    }
   }
 
   function buildConsoleScript(visitors, startDate, endDate) {
