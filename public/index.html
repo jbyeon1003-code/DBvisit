@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- v2.2 -->
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
@@ -56,46 +55,74 @@
       border-radius: 10px;
     }
     .h-title { font-size: 15px; font-weight: 600; color: #fff; }
-    .h-version {
-      font-size: 10px; font-weight: 600;
-      color: rgba(255,255,255,.5); letter-spacing: .5px;
-      margin-left: 2px; cursor: pointer;
-      text-decoration: underline dotted rgba(255,255,255,.3);
-    }
-    .h-version:hover { color: rgba(255,255,255,.85); }
-    .changelog-backdrop {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,.45); z-index: 100;
-      align-items: center; justify-content: center;
-    }
-    .changelog-backdrop.show { display: flex; }
-    .changelog-box {
-      background: var(--surface); border-radius: 14px;
-      box-shadow: 0 8px 32px rgba(0,0,0,.2);
-      width: min(480px, 92vw); max-height: 70vh;
-      overflow-y: auto; padding: 24px;
-    }
-    .changelog-title {
-      font-size: 15px; font-weight: 700; color: var(--text);
-      margin-bottom: 16px;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .changelog-close {
-      font-size: 18px; cursor: pointer; color: var(--muted);
-      line-height: 1; background: none; border: none; padding: 0;
-    }
-    .changelog-close:hover { color: var(--text); }
-    .cl-version { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; margin-top: 14px; }
-    .cl-version:first-child { margin-top: 0; }
-    .cl-tag { font-size: 11px; font-weight: 700; background: var(--green); color: #fff; padding: 2px 8px; border-radius: 10px; flex-shrink: 0; }
-    .cl-tag.orange { background: var(--orange); }
-    .cl-date { font-size: 11px; color: var(--muted); }
-    .cl-items { margin: 4px 0 0 0; padding-left: 16px; list-style: disc; color: var(--text); font-size: 12px; line-height: 1.8; }
     .h-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
     .h-dot { width: 6px; height: 6px; border-radius: 50%; background: #4a5568; transition: background .3s; }
     .h-dot.ok    { background: #48bb78; }
     .h-dot.error { background: #fc8181; }
     .h-status { font-size: 11px; color: rgba(255,255,255,.4); }
+    .h-version {
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255,255,255,.5);
+      letter-spacing: .5px;
+      margin-left: 2px;
+      cursor: pointer;
+      text-decoration: underline dotted rgba(255,255,255,.3);
+    }
+    .h-version:hover { color: rgba(255,255,255,.85); }
+
+    /* ──────── Changelog modal ──────── */
+    .changelog-backdrop {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .changelog-backdrop.show { display: flex; }
+    .changelog-box {
+      background: var(--surface);
+      border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.2);
+      width: min(480px, 92vw);
+      max-height: 70vh;
+      overflow-y: auto;
+      padding: 24px;
+    }
+    .changelog-title {
+      font-size: 15px; font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .changelog-close {
+      font-size: 18px; cursor: pointer;
+      color: var(--muted); line-height: 1;
+      background: none; border: none; padding: 0;
+    }
+    .changelog-close:hover { color: var(--text); }
+    .cl-version {
+      display: flex; align-items: baseline; gap: 8px;
+      margin-bottom: 6px; margin-top: 14px;
+    }
+    .cl-version:first-child { margin-top: 0; }
+    .cl-tag {
+      font-size: 11px; font-weight: 700;
+      background: var(--green); color: #fff;
+      padding: 2px 8px; border-radius: 10px;
+      flex-shrink: 0;
+    }
+    .cl-tag.orange { background: var(--orange); }
+    .cl-date { font-size: 11px; color: var(--muted); }
+    .cl-items {
+      margin: 4px 0 0 0;
+      padding-left: 16px;
+      list-style: disc;
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.8;
+    }
     .h-btn {
       font-size: 11px; font-weight: 500;
       color: #fff; background: rgba(255,255,255,.1);
@@ -105,73 +132,6 @@
       transition: background .15s;
     }
     .h-btn:hover { background: rgba(255,255,255,.18); }
-    .h-btn.dbg { border-color: rgba(252,129,74,.5); color: rgba(252,200,150,.9); }
-    .h-btn.dbg:hover { background: rgba(252,129,74,.2); }
-
-    /* ──────── Debug modal ──────── */
-    .dbg-backdrop {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,.55); z-index: 200;
-      align-items: flex-start; justify-content: center;
-      overflow-y: auto; padding: 24px 12px;
-    }
-    .dbg-backdrop.show { display: flex; }
-    .dbg-box {
-      background: var(--surface); border-radius: 14px;
-      box-shadow: 0 8px 40px rgba(0,0,0,.3);
-      width: min(720px, 96vw); padding: 20px;
-      display: flex; flex-direction: column; gap: 14px;
-    }
-    .dbg-head {
-      display: flex; align-items: center; gap: 10px;
-      font-size: 14px; font-weight: 700; color: var(--text);
-    }
-    .dbg-head-btns { display: flex; gap: 8px; margin-left: auto; }
-    .dbg-tab {
-      font-size: 11px; font-weight: 600;
-      padding: 4px 12px; border-radius: 12px;
-      border: 1px solid var(--border); background: transparent;
-      color: var(--muted); cursor: pointer; font-family: inherit;
-      transition: all .15s;
-    }
-    .dbg-tab.active { background: var(--green); color: #fff; border-color: var(--green); }
-    .dbg-close {
-      font-size: 18px; color: var(--muted); background: none;
-      border: none; cursor: pointer; padding: 0; line-height: 1;
-    }
-    .dbg-close:hover { color: var(--text); }
-    .dbg-shots { display: flex; flex-direction: column; gap: 10px; }
-    .dbg-shot-label { font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
-    .dbg-shot-img { width: 100%; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; display: block; }
-    .dbg-json {
-      font-size: 11px; font-family: monospace;
-      background: #f3f4f6; border-radius: 8px;
-      padding: 12px; max-height: 260px; overflow-y: auto;
-      white-space: pre-wrap; word-break: break-all;
-      color: #374151; border: 1px solid var(--border);
-    }
-    .dbg-spinner {
-      text-align: center; padding: 32px; color: var(--muted);
-      font-size: 13px;
-    }
-    .dbg-err { color: #e53e3e; font-size: 13px; padding: 8px; }
-
-    .btn-copy {
-      width: 100%; height: 40px; margin-top: 8px;
-      border: 1.5px solid var(--green); border-radius: 20px;
-      font-size: 13px; font-weight: 600; font-family: inherit;
-      cursor: pointer; background: transparent; color: var(--green);
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      transition: background .15s, color .15s;
-    }
-    .btn-copy:hover { background: var(--green-lt); }
-    .how-to {
-      display: none; margin-top: 12px; padding: 12px 14px;
-      background: #F0F9FF; border: 1px solid #BAE0F9;
-      border-radius: 10px; font-size: 12px; line-height: 1.8; color: #0369A1;
-    }
-    .how-to.show { display: block; }
-    .how-to strong { font-weight: 700; }
 
     /* ──────── Layout ──────── */
     .wrap {
@@ -361,16 +321,20 @@
     /* ──────── Status ──────── */
     .status {
       display: none;
-      align-items: center;
+      align-items: flex-start;
       gap: 8px;
       padding: 12px 20px;
       font-size: 13px;
       font-weight: 600;
       border-top: 1px solid var(--border);
+      white-space: pre-wrap;
+      line-height: 1.6;
     }
     .status.show { display: flex; }
     .status.ok { color: var(--green); background: var(--green-lt); }
     .status.ng { color: #D93025; background: #FFF5F4; }
+
+    #statusIcon { margin-top: 2px; }
 
     .err-toggle {
       display: none;
@@ -443,6 +407,177 @@
       color: var(--muted);
       padding-bottom: 4px;
     }
+
+    .btn-copy {
+      width: 100%; height: 40px;
+      margin-top: 8px;
+      border: 1.5px solid var(--green);
+      border-radius: 20px;
+      font-size: 13px; font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      background: transparent;
+      color: var(--green);
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: background .15s, color .15s;
+    }
+    .btn-copy:hover { background: var(--green-lt); }
+
+    .how-to {
+      display: none;
+      margin-top: 12px;
+      padding: 12px 14px;
+      background: #F0F9FF;
+      border: 1px solid #BAE0F9;
+      border-radius: 10px;
+      font-size: 12px;
+      line-height: 1.8;
+      color: #0369A1;
+    }
+    .how-to.show { display: block; }
+    .how-to strong { font-weight: 700; }
+
+    .toast {
+      position: fixed;
+      bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1e293b;
+      color: #fff;
+      font-size: 12px;
+      padding: 10px 20px;
+      border-radius: 20px;
+      opacity: 0;
+      transition: opacity .25s, transform .25s;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 999;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ──────── Mobile ──────── */
+    @media (max-width: 480px) {
+      body { font-size: 13px; }
+
+      /* 헤더: 상태 텍스트 숨김, 패딩·간격 축소 */
+      .app-header { padding: 0 14px; gap: 7px; height: 48px; }
+      .h-title    { font-size: 13px; }
+      .h-badge    { font-size: 8px; padding: 2px 7px; letter-spacing: 1px; }
+      .h-status   { display: none; }
+      .h-btn      { padding: 3px 10px; font-size: 10px; }
+
+      /* 레이아웃 */
+      .wrap { margin: 10px auto 40px; padding: 0 10px; gap: 8px; }
+
+      /* 카드 */
+      .card-head { padding: 10px 14px 9px; }
+      .card-body { padding: 12px 14px; }
+
+      /* 날짜 인풋 — 2열 유지, 넘침 방지 */
+      .date-row { gap: 6px; }
+      .inp-date { width: 100%; max-width: 100%; box-sizing: border-box; height: 40px; font-size: 11px; padding: 0 6px; border-radius: 20px; }
+
+      /* 칩 — 터치 타겟 확보 */
+      .chip { min-height: 40px; min-width: 64px; padding: 8px 12px; font-size: 13px; }
+
+      /* 실행 카드 */
+      .run-body   { padding: 14px; }
+      .btn-run    { height: 52px; font-size: 15px; border-radius: 26px; }
+      .btn-copy   { height: 46px; font-size: 13px; border-radius: 23px; }
+
+      /* 정보 테이블 */
+      .info-k { width: 64px; font-size: 10px; }
+      .info-v { font-size: 12px; }
+
+      /* 에러박스 */
+      .err-box { margin: 0 14px 12px; }
+
+      /* 스크린샷 */
+      .shot-wrap { padding: 12px 14px 16px; }
+
+      /* 푸터 */
+      .footer { font-size: 11px; }
+
+      /* 체인지로그 모달 */
+      .changelog-box { padding: 18px 16px; max-height: 82vh; }
+    }
+
+    @media (max-width: 360px) {
+      /* 극소형 화면: 뱃지 숨김 */
+      .h-badge { display: none; }
+      .h-title { font-size: 12px; }
+      .wrap    { padding: 0 8px; }
+    }
+
+    /* ──────── Add-person form ──────── */
+    .add-person-wrap {
+      margin-top: 12px;
+      border-top: 1px dashed var(--border);
+      padding-top: 12px;
+    }
+    .add-person-form {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .add-person-form.show { display: flex; }
+    .add-person-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .add-person-row.full { grid-template-columns: 1fr; }
+    @media (max-width: 480px) {
+      .add-person-row { grid-template-columns: 1fr; }
+      .inp-add { height: 42px; font-size: 13px; border-radius: 21px; }
+      .btn-add-confirm { height: 42px; font-size: 13px; border-radius: 21px; }
+      .btn-add-toggle  { height: 38px; font-size: 12px; }
+    }
+    .inp-add {
+      width: 100%; height: 34px;
+      padding: 0 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 17px;
+      font-size: 12px;
+      font-family: inherit;
+      color: var(--text);
+      background: #FAFBFD;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .inp-add:focus { border-color: var(--orange); background: #fff; }
+    .inp-add::placeholder { color: var(--muted); }
+    .btn-add-confirm {
+      height: 34px;
+      border: none;
+      border-radius: 17px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      background: var(--orange);
+      color: #fff;
+      transition: opacity .15s;
+    }
+    .btn-add-confirm:hover { opacity: .85; }
+    .btn-add-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      width: 100%;
+      height: 30px;
+      border: 1.5px dashed var(--border);
+      border-radius: 15px;
+      background: transparent;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color .15s, color .15s;
+    }
+    .btn-add-toggle:hover { border-color: var(--orange); color: var(--orange); }
   </style>
 </head>
 <body>
@@ -454,7 +589,6 @@
   <div class="h-right">
     <span class="h-dot" id="hDot"></span>
     <span class="h-status" id="hStatus">-</span>
-    <button class="h-btn dbg" onclick="openDebug('debug')">디버그</button>
     <button class="h-btn" onclick="checkHealth()">상태 확인</button>
   </div>
 </header>
@@ -497,7 +631,7 @@
         <div class="info-row"><span class="info-k">부서</span><span class="info-v">제조기술1팀 (Fab2)</span></div>
         <div class="info-row"><span class="info-k">소속</span><span class="info-v">ASML</span></div>
         <div class="info-row"><span class="info-k">출입지역</span><span class="info-v">상우캠퍼스 어드민동</span></div>
-        <div class="info-row"><span class="info-k">방문목적</span><span class="info-v">업무협의</span></div>
+        <div class="info-row"><span class="info-k">방문목적</span><span class="info-v">공사/수리/Setup</span></div>
       </div>
     </div>
   </div>
@@ -528,6 +662,19 @@
     </div>
     <div class="card-body">
       <div class="chip-grid" id="gridMulti"></div>
+      <div class="add-person-wrap">
+        <button class="btn-add-toggle" id="btnAddToggle" onclick="toggleAddForm()">＋ 새 인원 추가</button>
+        <div class="add-person-form" id="addPersonForm">
+          <div class="add-person-row">
+            <input class="inp-add" type="text" id="addName" placeholder="이름 (필수)" />
+            <input class="inp-add" type="text" id="addBirth" placeholder="생년월일 (예: 1990-01-01)" />
+          </div>
+          <div class="add-person-row full">
+            <input class="inp-add" type="text" id="addSN" placeholder="노트북 S/N (없으면 빈칸)" />
+          </div>
+          <button class="btn-add-confirm" onclick="addNewVisitor()">추가</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -565,30 +712,26 @@
     <div class="err-toggle" id="errToggle" onclick="toggleErr()">▼ 오류 상세 보기</div>
     <div class="err-box" id="errBox"></div>
 
-    <div class="shot-wrap" id="shotWrap">
-      <div class="shot-label" id="shotLabel">입력 결과 스크린샷</div>
-      <img class="shot-img" id="shotImg" onclick="window.open(this.src)" title="클릭해서 크게 보기" />
-      <div class="shot-note" id="shotNote">실제 신청 버튼은 눌리지 않았습니다. 확인 후 직접 제출하세요.</div>
+    <div class="shot-wrap" id="shotVisitors">
+      <div class="shot-label">① 방문객 정보 입력 완료</div>
+      <img class="shot-img" id="shotImgVisitors" onclick="window.open(this.src)" title="클릭해서 크게 보기" />
+      <div class="shot-note">방문객 정보가 입력된 상태입니다.</div>
+    </div>
+
+    <div class="shot-wrap" id="shotEquipment">
+      <div class="shot-label">② 휴대물품 입력 완료</div>
+      <img class="shot-img" id="shotImgEquipment" onclick="window.open(this.src)" title="클릭해서 크게 보기" />
+      <div class="shot-note">실제 신청 버튼은 눌리지 않았습니다. 확인 후 직접 제출하세요.</div>
+    </div>
+
+    <div class="shot-wrap" id="shotError">
+      <div class="shot-label">실패 시점 스크린샷</div>
+      <img class="shot-img err" id="shotImgError" onclick="window.open(this.src)" title="클릭해서 크게 보기" />
     </div>
   </div>
 
   <p class="footer">내용 확인 후 신청 버튼은 직접 눌러주세요.</p>
-</div>
-
-<!-- Debug modal -->
-<div class="dbg-backdrop" id="dbgBackdrop" onclick="if(event.target===this)closeDebug()">
-  <div class="dbg-box">
-    <div class="dbg-head">
-      <span id="dbgTitle">디버그</span>
-      <div class="dbg-head-btns">
-        <button class="dbg-tab active" id="dbgTab0" onclick="openDebug('debug')">메인 흐름</button>
-        <button class="dbg-tab" id="dbgTab1" onclick="openDebug('debug-visitor')">방문객</button>
-        <button class="dbg-tab" id="dbgTab2" onclick="openDebug('debug-goods')">휴대물품</button>
-      </div>
-      <button class="dbg-close" onclick="closeDebug()">✕</button>
-    </div>
-    <div id="dbgBody"><div class="dbg-spinner">버튼을 눌러 디버그를 시작하세요.</div></div>
-  </div>
+  <p class="footer" style="margin-top:4px; font-size:11px; color:var(--muted); opacity:.5;">made by JBYE</p>
 </div>
 
 <!-- Changelog modal -->
@@ -600,6 +743,17 @@
     </div>
 
     <div class="cl-version">
+      <span class="cl-tag orange">v2.3</span>
+      <span class="cl-date">2026-05-03</span>
+    </div>
+    <ul class="cl-items">
+      <li>신청 완료 후 상세 리포트(방문객 명단) 표시 기능 추가</li>
+      <li>콘솔 스크립트 자동 제출 옵션 추가</li>
+      <li>진행 단계 동적 계산 버그 수정</li>
+      <li>팝업 키워드 확장 (공지, 안내, 매뉴얼 대응)</li>
+    </ul>
+
+    <div class="cl-version">
       <span class="cl-tag">v2.2</span>
       <span class="cl-date">2026-05-03</span>
     </div>
@@ -609,48 +763,32 @@
       <li>새 인원 추가 폼 모바일 1열 스택</li>
       <li>360px 이하 극소형 화면 대응</li>
     </ul>
-
-    <div class="cl-version">
-      <span class="cl-tag">v2.1</span>
-      <span class="cl-date">2026-05-03</span>
-    </div>
-    <ul class="cl-items">
-      <li>휴대물품 복수 추가 버그 수정 (마지막 행 기준 입력)</li>
-    </ul>
-
-    <div class="cl-version">
-      <span class="cl-tag">v2.0</span>
-      <span class="cl-date">2026-05-03</span>
-    </div>
-    <ul class="cl-items">
-      <li>방문신청 / 인원추가 탭 분리</li>
-      <li>노트북 S/N 자동 입력 (인원추가 모드)</li>
-      <li>DBHiTek 디자인 리뉴얼</li>
-    </ul>
-
-    <div class="cl-version">
-      <span class="cl-tag">v1.0</span>
-      <span class="cl-date">2026-05-02</span>
-    </div>
-    <ul class="cl-items">
-      <li>방문신청 자동화 최초 릴리즈</li>
-      <li>브라우저 콘솔 스크립트 1~7단계</li>
-      <li>방문객 선택 · 날짜 · 담당자 자동 입력</li>
-    </ul>
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
-  const VISITORS = [
-    "한준석","최선국","조영택","신영재","이영훈","강정규",
-    "변정호","김시준","권이건","장덕수","백한빈","박찬순"
+  const VISITORS_DATA = [
+    { name: "한준석", birth: "1977-01-03", laptop_sn: null },
+    { name: "최선국", birth: "1979-05-03", laptop_sn: "PF35R8Y6(SK)" },
+    { name: "조영택", birth: "1985-01-20", laptop_sn: "PF410726(YT)" },
+    { name: "신영재", birth: "1985-04-05", laptop_sn: "PF46LP6P(YJ)" },
+    { name: "이영훈", birth: "1988-06-20", laptop_sn: "PF123456(YH)" },
+    { name: "강정규", birth: "1990-03-07", laptop_sn: "PF3AWQP1(JG)" },
+    { name: "변정호", birth: "1990-08-12", laptop_sn: "PF46CER0(JH)" },
+    { name: "김시준", birth: "1992-01-08", laptop_sn: "PG46FEY5(SJ)" },
+    { name: "권이건", birth: "1994-12-10", laptop_sn: "PF3YV1PX(LK)" },
+    { name: "장덕수", birth: "1996-04-14", laptop_sn: "5CG4255D3R(DS)" },
+    { name: "백한빈", birth: "1996-08-31", laptop_sn: "PF3YAA2F(HB)" },
+    { name: "박찬순", birth: "1999-04-07", laptop_sn: "PF4SLTEF(CS)" },
   ];
 
   // 방문신청: 라디오 (단일)
-  VISITORS.forEach((name, idx) => {
+  VISITORS_DATA.forEach((v, idx) => {
     const el = document.createElement('label');
     el.className = 'chip';
-    el.innerHTML = `<input type="radio" name="visitor" value="${idx}"><span>${name}</span>`;
+    el.innerHTML = `<input type="radio" name="visitor" value="${idx}"><span>${v.name}</span>`;
     el.querySelector('input').addEventListener('change', () => {
       document.querySelectorAll('#gridSingle .chip').forEach(c =>
         c.classList.toggle('on', c.querySelector('input').checked)
@@ -660,10 +798,10 @@
   });
 
   // 인원추가: 체크박스 (다중)
-  VISITORS.forEach((name, idx) => {
+  VISITORS_DATA.forEach((v, idx) => {
     const el = document.createElement('label');
     el.className = 'chip';
-    el.innerHTML = `<input type="checkbox" name="visitorMulti" value="${idx}"><span>${name}</span>`;
+    el.innerHTML = `<input type="checkbox" name="visitorMulti" value="${idx}"><span>${v.name}</span>`;
     el.querySelector('input').addEventListener('change', function () {
       el.classList.toggle('on-o', this.checked);
     });
@@ -679,8 +817,61 @@
     });
   }
 
-  // 날짜 초기화
-  const today = new Date().toISOString().split('T')[0];
+  function toggleAddForm() {
+    const form = document.getElementById('addPersonForm');
+    const btn  = document.getElementById('btnAddToggle');
+    const open = form.classList.toggle('show');
+    btn.textContent = open ? '✕ 닫기' : '＋ 새 인원 추가';
+    if (open) document.getElementById('addName').focus();
+  }
+
+  function addNewVisitor() {
+    const name  = document.getElementById('addName').value.trim();
+    const birth = document.getElementById('addBirth').value.trim();
+    const sn    = document.getElementById('addSN').value.trim() || null;
+
+    if (!name) { showToast('이름을 입력해주세요.'); return; }
+    if (!birth || !/^\d{4}-\d{2}-\d{2}$/.test(birth)) {
+      showToast('생년월일을 YYYY-MM-DD 형식으로 입력해주세요.'); return;
+    }
+    if (VISITORS_DATA.some(v => v.name === name)) {
+      showToast(`"${name}"은(는) 이미 목록에 있습니다.`); return;
+    }
+
+    const newVisitor = { name, birth, laptop_sn: sn };
+    VISITORS_DATA.push(newVisitor);
+    const idx = VISITORS_DATA.length - 1;
+
+    const elSingle = document.createElement('label');
+    elSingle.className = 'chip';
+    elSingle.innerHTML = `<input type="radio" name="visitor" value="${idx}"><span>${name}</span>`;
+    elSingle.querySelector('input').addEventListener('change', () => {
+      document.querySelectorAll('#gridSingle .chip').forEach(c =>
+        c.classList.toggle('on', c.querySelector('input').checked)
+      );
+    });
+    document.getElementById('gridSingle').appendChild(elSingle);
+
+    const elMulti = document.createElement('label');
+    elMulti.className = 'chip';
+    elMulti.innerHTML = `<input type="checkbox" name="visitorMulti" value="${idx}"><span>${name}</span>`;
+    elMulti.querySelector('input').addEventListener('change', function () {
+      elMulti.classList.toggle('on-o', this.checked);
+    });
+    document.getElementById('gridMulti').appendChild(elMulti);
+
+    document.getElementById('addName').value  = '';
+    document.getElementById('addBirth').value = '';
+    document.getElementById('addSN').value    = '';
+    toggleAddForm();
+    showToast(`"${name}" 추가 완료`);
+  }
+
+  function localToday() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  const today = localToday();
   document.getElementById('startDate').value = today;
   document.getElementById('endDate').value = today;
   document.getElementById('startDate').addEventListener('change', function () {
@@ -688,284 +879,6 @@
     if (!end.value || end.value < this.value) end.value = this.value;
   });
 
-  function copyToClipboard(text) {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px';
-    document.body.appendChild(ta);
-    ta.focus(); ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-  }
-
-  function showToast(msg) {
-    let t = document.getElementById('toastMsg');
-    if (!t) {
-      t = document.createElement('div');
-      t.id = 'toastMsg';
-      t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;font-size:12px;padding:10px 20px;border-radius:20px;z-index:9999;transition:opacity .3s';
-      document.body.appendChild(t);
-    }
-    t.textContent = msg;
-    t.style.opacity = '1';
-    clearTimeout(t._timer);
-    t._timer = setTimeout(() => { t.style.opacity = '0'; }, 3000);
-  }
-
-  function copyScript() {
-    const start = document.getElementById('startDate').value;
-    const end   = document.getElementById('endDate').value || start;
-    const radio = document.querySelector('input[name="visitor"]:checked');
-    const multiChecked = Array.from(document.querySelectorAll('input[name="visitorMulti"]:checked'));
-    let visitors;
-    if (radio) {
-      visitors = [VISITORS_DATA[parseInt(radio.value, 10)]];
-    } else if (multiChecked.length > 0) {
-      visitors = multiChecked.map(c => VISITORS_DATA[parseInt(c.value, 10)]);
-    } else {
-      setStatus('ng', '⚠', '방문신청 또는 인원추가에서 방문객을 선택해주세요.'); return;
-    }
-    if (!start) { setStatus('ng', '⚠', '방문 시작일을 선택해주세요.'); return; }
-    const script = buildConsoleScript(visitors, start, end);
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(script)
-        .then(() => {
-          showToast('스크립트 복사 완료!');
-          document.getElementById('howTo').className = 'how-to show';
-        })
-        .catch(() => {
-          copyToClipboard(script);
-          showToast('스크립트 복사 완료!');
-          document.getElementById('howTo').className = 'how-to show';
-        });
-    } else {
-      copyToClipboard(script);
-      showToast('스크립트 복사 완료!');
-      document.getElementById('howTo').className = 'how-to show';
-    }
-  }
-
-  function buildConsoleScript(visitors, startDate, endDate) {
-    const vJson = JSON.stringify(visitors);
-    return `(async () => {
-
-  // =============================================
-  // ★ 방문신청 자동 입력 스크립트 (ASML → DBHiTek)
-  // =============================================
-  // 사용법: ims.dbhitek.com 접속 → F12 → Console 탭에 붙여넣기 후 Enter
-
-  const V = ${vJson};
-
-  const INFO = {
-    LOCATION_CODE: "3000",
-    PLACE_CODE: "4 ",
-    MANAGER_NAME: "채명주",
-    VISITOR_COMPANY: "ASML",
-    VISIT_START_DATE: "${startDate}",
-    VISIT_END_DATE: "${endDate}",
-    VISIT_START_HOUR: "9",
-    VISIT_START_MINUTE: "0",
-    VISIT_END_HOUR: "18",
-    VISIT_END_MINUTE: "0",
-  };
-
-  function setVal(el, v) {
-    if (!el) return;
-    const d = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
-    if (d && d.set) d.set.call(el, v); else el.value = v;
-    el.dispatchEvent(new Event('input',  { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
-  }
-  const qs    = n => Array.from(document.querySelectorAll('input,select,textarea')).find(e => e.name === n);
-  const qsAll = n => Array.from(document.querySelectorAll('input,select,textarea')).filter(e => e.name === n);
-
-  // 0단계: [방문 신청] 버튼 클릭 → 동의 팝업 오픈
-  const visitBtn = Array.from(document.querySelectorAll('button, a, input[type=button]'))
-    .find(el => { const t = (el.innerText || el.value || '').replace(/\\s+/g, ''); return t.includes('방문신청') && t.length <= 10; });
-  if (!visitBtn) { console.error('❌ 방문신청 버튼을 찾을 수 없습니다.'); return; }
-  visitBtn.click();
-  await new Promise(r => setTimeout(r, 1500));
-
-  // 1단계: (필수)동의 체크
-  document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-    const p = cb.closest('label,tr,li,div') || cb.parentElement;
-    const t = p ? p.innerText : '';
-    if (!t.includes('(선택)') && !t.includes('선택사항') &&
-        (cb.required || t.includes('(필수)') || t.includes('필수항목')) && !cb.checked) cb.click();
-  });
-  await new Promise(r => setTimeout(r, 200));
-
-  // 2단계: 회사 선택
-  setVal(qs('Location'), INFO.LOCATION_CODE);
-  await new Promise(r => setTimeout(r, 400));
-
-  // 3단계: 방문 날짜 입력
-  setVal(qs('VisitStartDate'),       INFO.VISIT_START_DATE);
-  setVal(qs('VisitStartDateHour'),   INFO.VISIT_START_HOUR);
-  setVal(qs('VisitStartDateMinute'), INFO.VISIT_START_MINUTE);
-  setVal(qs('VisitEndDate'),         INFO.VISIT_END_DATE);
-  setVal(qs('VisitEndDateHour'),     INFO.VISIT_END_HOUR);
-  setVal(qs('VisitEndDateMinute'),   INFO.VISIT_END_MINUTE);
-
-  // 4단계: 담당자 검색 팝업 → 채명주 선택
-  const contactInp = qs('ContactName');
-  if (contactInp) {
-    let el = contactInp.parentElement;
-    let searchBtn = null;
-    for (let d = 0; d < 8 && el && el !== document.body; d++) {
-      searchBtn = Array.from(el.querySelectorAll('button,a,input[type=button],input[type=image]')).find(b => {
-        const t=(b.innerText||b.value||b.title||b.getAttribute('alt')||'').toLowerCase();
-        const cls=(b.className||'').toLowerCase();
-        const src=(b.getAttribute('src')||'').toLowerCase();
-        return t.includes('검색')||t.includes('조회')||t.includes('search')||
-               cls.includes('search')||cls.includes('find')||
-               src.includes('search')||src.includes('find')||src.includes('glass');
-      });
-      if (searchBtn) break;
-      el = el.parentElement;
-    }
-    if (searchBtn) {
-      searchBtn.click();
-      await new Promise(r => setTimeout(r, 1500));
-      const nameInput = Array.from(document.querySelectorAll('input[type=text],input:not([type])'))
-        .filter(e => e.offsetParent !== null)
-        .find(inp => {
-          const c = inp.closest('tr,div,td,li') || inp.parentElement;
-          const label = c ? c.innerText : '';
-          return label.includes('성명')||label.includes('이름')||
-                 (inp.placeholder||'').includes('성명')||(inp.name||'').toLowerCase().includes('name');
-        });
-      if (nameInput) {
-        setVal(nameInput, INFO.MANAGER_NAME);
-        await new Promise(r => setTimeout(r, 300));
-        const queryBtn = Array.from(document.querySelectorAll('button,input[type=button],input[type=submit]'))
-          .find(b => { const t=(b.innerText||b.value||'').trim(); return t==='조회'||t==='검색'||t==='Search'; });
-        if (queryBtn) {
-          queryBtn.click();
-          await new Promise(r => setTimeout(r, 1500));
-          const rows = Array.from(document.querySelectorAll('table tbody tr'));
-          const row = rows.find(r => r.innerText.includes(INFO.MANAGER_NAME)) || rows[0];
-          if (row) {
-            const clickable = row.querySelector('a')||row.querySelector('td[onclick]')||row.firstElementChild;
-            if (clickable) clickable.click(); else row.click();
-            await new Promise(r => setTimeout(r, 800));
-          }
-        }
-      }
-    }
-  }
-
-  // 5단계: 출입지역 + 방문목적
-  setVal(qs('PlaceCodeID'), INFO.PLACE_CODE);
-  const purposeSel = qs('VisitPurposeCodeID');
-  if (purposeSel) {
-    const opt = Array.from(purposeSel.options).find(o =>
-      o.text.includes('공사')||o.text.includes('수리')||o.text.toLowerCase().includes('setup')
-    );
-    if (opt) setVal(purposeSel, opt.value);
-  }
-
-  // 6단계: 방문객 행 추가
-  for (let i = 1; i < V.length; i++) {
-    const btn = Array.from(document.querySelectorAll('button,a')).find(b => {
-      const t=(b.innerText||'').trim();
-      return t==='Add Visitor'||t==='방문객 추가'||t==='방문객추가';
-    });
-    if (btn) { btn.click(); await new Promise(r => setTimeout(r, 300)); }
-  }
-
-  // 7단계: 방문객 이름 / 생년월일 / 소속 입력
-  for (let i = 0; i < V.length; i++) {
-    const nameInputs = qsAll('Name[]');
-    if (nameInputs[i]) setVal(nameInputs[i], V[i].name);
-    const births = qsAll('BirthDate[]');
-    setVal(births[i], V[i].birth.replace(/-/g,''));
-    const cell = births[i] && (births[i].closest('tr,td,div,li') || births[i].parentElement);
-    const confirmBtn = cell && Array.from(cell.querySelectorAll('button,input[type=button],a')).find(b => {
-      const t=(b.innerText||b.value||'').trim();
-      return t==='확인'||t==='Confirm'||t==='Check';
-    });
-    if (confirmBtn) { confirmBtn.click(); await new Promise(r => setTimeout(r, 500)); }
-    const cos = qsAll('CompanyName[]');
-    setVal(cos[i], INFO.VISITOR_COMPANY);
-  }
-
-  console.log('✅ 입력 완료:', V.map(v=>v.name).join(', '));
-  alert('✅ ' + V.length + '명 입력 완료!\\n내용 확인 후 직접 제출해주세요.');
-})();`;
-  }
-
-  const DBG_LABELS = { debug: '메인 흐름', 'debug-visitor': '방문객', 'debug-goods': '휴대물품' };
-  const DBG_TAB_IDS = { debug: 'dbgTab0', 'debug-visitor': 'dbgTab1', 'debug-goods': 'dbgTab2' };
-  let dbgCurrentEndpoint = null;
-
-  async function openDebug(endpoint) {
-    document.getElementById('dbgBackdrop').classList.add('show');
-    document.querySelectorAll('.dbg-tab').forEach(t => t.classList.remove('active'));
-    document.getElementById(DBG_TAB_IDS[endpoint]).classList.add('active');
-    document.getElementById('dbgTitle').textContent = `디버그 — ${DBG_LABELS[endpoint]}`;
-
-    if (dbgCurrentEndpoint === endpoint) return;
-    dbgCurrentEndpoint = endpoint;
-
-    const body = document.getElementById('dbgBody');
-    body.innerHTML = '<div class="dbg-spinner">⏳ 브라우저 실행 중... (30~60초 소요)</div>';
-
-    try {
-      const res = await fetch(`/${endpoint}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      renderDebug(body, data);
-    } catch(e) {
-      body.innerHTML = `<div class="dbg-err">오류: ${e.message}</div>`;
-      dbgCurrentEndpoint = null;
-    }
-  }
-
-  function renderDebug(container, data) {
-    const shots = [];
-    function findShots(obj, prefix) {
-      if (!obj || typeof obj !== 'object') return;
-      for (const [k, v] of Object.entries(obj)) {
-        if (k === 'screenshot' && typeof v === 'string') shots.push({ label: prefix, src: v });
-        else findShots(v, prefix ? `${prefix} › ${k}` : k);
-      }
-    }
-    findShots(data, '');
-
-    const dataCopy = JSON.parse(JSON.stringify(data));
-    function stripShots(obj) {
-      if (!obj || typeof obj !== 'object') return;
-      for (const k of Object.keys(obj)) {
-        if (k === 'screenshot') obj[k] = '[base64 생략]';
-        else stripShots(obj[k]);
-      }
-    }
-    stripShots(dataCopy);
-
-    let html = '<div class="dbg-shots">';
-    for (const s of shots) {
-      html += `<div><div class="dbg-shot-label">${s.label || '스크린샷'}</div>
-        <img class="dbg-shot-img" src="data:image/jpeg;base64,${s.src}" onclick="window.open(this.src)" title="클릭해서 크게 보기"></div>`;
-    }
-    if (!shots.length) html += '<div class="dbg-shot-label">스크린샷 없음</div>';
-    html += '</div>';
-    html += `<div><div class="dbg-shot-label">응답 데이터</div><div class="dbg-json">${JSON.stringify(dataCopy, null, 2)}</div></div>`;
-    container.innerHTML = html;
-  }
-
-  function closeDebug() {
-    document.getElementById('dbgBackdrop').classList.remove('show');
-    dbgCurrentEndpoint = null;
-    document.getElementById('dbgBody').innerHTML = '<div class="dbg-spinner">버튼을 눌러 디버그를 시작하세요.</div>';
-  }
-
-  function toggleChangelog(e) {
-    if (e && e.target !== document.getElementById('changelogBackdrop')) return;
-    document.getElementById('changelogBackdrop').classList.toggle('show');
-  }
-
-  // 헬스체크
   async function checkHealth() {
     const dot = document.getElementById('hDot');
     const txt = document.getElementById('hStatus');
@@ -1002,14 +915,18 @@
     document.getElementById('statusMsg').textContent = msg;
   }
 
-  function showShot(b64, isErr) {
-    document.getElementById('shotLabel').textContent = isErr ? '실패 시점 스크린샷' : '입력 결과 스크린샷';
-    const img = document.getElementById('shotImg');
-    img.src = 'data:image/jpeg;base64,' + b64;
-    img.className = 'shot-img' + (isErr ? ' err' : '');
-    document.getElementById('shotNote').style.display = isErr ? 'none' : 'block';
-    document.getElementById('shotWrap').className = 'shot-wrap show';
-    setTimeout(() => document.getElementById('shotWrap').scrollIntoView({ behavior: 'smooth' }), 100);
+  function showShot(key, b64) {
+    const map = {
+      visitors:  { wrap: 'shotVisitors',  img: 'shotImgVisitors'  },
+      equipment: { wrap: 'shotEquipment', img: 'shotImgEquipment' },
+      submit_result: { wrap: 'shotEquipment', img: 'shotImgEquipment' },
+      error:     { wrap: 'shotError',     img: 'shotImgError'     },
+    };
+    const ids = map[key] || map.error;
+    document.getElementById(ids.img).src = 'data:image/jpeg;base64,' + b64;
+    const wrap = document.getElementById(ids.wrap);
+    wrap.className = 'shot-wrap show';
+    setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth' }), 100);
   }
 
   function toggleErr() {
@@ -1024,7 +941,9 @@
     document.getElementById('statusEl').className = 'status';
     document.getElementById('errToggle').className = 'err-toggle';
     document.getElementById('errBox').className = 'err-box';
-    document.getElementById('shotWrap').className = 'shot-wrap';
+    ['shotVisitors', 'shotEquipment', 'shotError'].forEach(id => {
+      document.getElementById(id).className = 'shot-wrap';
+    });
     setProgress(null);
   }
 
@@ -1032,21 +951,15 @@
     const start = document.getElementById('startDate').value;
     const end   = document.getElementById('endDate').value;
 
-    const radio = document.querySelector('input[name="visitor"]:checked');
-    const multiChecked = Array.from(document.querySelectorAll('input[name="visitorMulti"]:checked'));
-
-    let visitorIndices, mode;
-    if (radio) {
-      visitorIndices = [parseInt(radio.value, 10)];
-      mode = 'single';
-    } else if (multiChecked.length > 0) {
-      visitorIndices = multiChecked.map(c => parseInt(c.value, 10));
-      mode = 'multi';
-    } else {
-      setStatus('ng', '⚠', '방문신청 또는 인원추가에서 방문객을 선택해주세요.');
-      return;
-    }
+    const selected = getSelectedVisitors();
+    if (!selected) { setStatus('ng', '⚠', '방문객을 선택해주세요.'); return; }
     if (!start) { setStatus('ng', '⚠', '방문 시작일을 선택해주세요.'); return; }
+
+    const singleIndex  = selected.single ? VISITORS_DATA.indexOf(selected.single) : null;
+    const extraIndices = selected.multi.map(v => VISITORS_DATA.indexOf(v)).filter(i => i >= 0);
+    const totalCount   = (singleIndex != null ? 1 : 0) + extraIndices.length;
+    const hasLaptop    = selected.multi.some(v => v.laptop_sn);
+    const totalSteps   = hasLaptop ? 7 : 6;
 
     const btn  = document.getElementById('btnRun');
     const icon = document.getElementById('runIcon');
@@ -1055,13 +968,13 @@
     icon.innerHTML = '<div class="spin"></div>';
     text.textContent = '실행 중...';
     resetUI();
-    setProgress('준비 중...', 0, 5);
+    setProgress('준비 중...', 0, totalSteps);
 
     try {
       const res = await fetch('/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ start, end, visitorIndices, mode }),
+        body: JSON.stringify({ start, end, singleIndex, extraIndices }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -1079,21 +992,23 @@
         for (const chunk of chunks) {
           if (!chunk.startsWith('data: ')) continue;
           let ev; try { ev = JSON.parse(chunk.slice(6)); } catch { continue; }
-          setProgress(ev.msg, ev.step, ev.total);
+          
           if (ev.done) {
-            setProgress(null);
             if (ev.ok) {
-              setStatus('ok', '✓', `${visitorIndices.length}명 입력 완료`);
-              if (ev.screenshot) showShot(ev.screenshot, false);
+              setProgress('신청 완료', ev.step, ev.total);
+              setStatus('ok', '✓', ev.msg);
             } else {
+              setProgress(null);
               setStatus('ng', '✕', `[${ev.stage || '-'}] ${ev.error || '오류'}`);
-              if (ev.screenshot) showShot(ev.screenshot, true);
               if (ev.error) {
                 document.getElementById('errBox').textContent = `단계: ${ev.stage}\n오류: ${ev.error}`;
                 document.getElementById('errToggle').className = 'err-toggle show';
               }
             }
+          } else {
+            setProgress(ev.msg, ev.step, ev.total);
           }
+          if (ev.screenshot && ev.shotKey) showShot(ev.shotKey, ev.screenshot);
         }
       }
     } catch (e) {
@@ -1106,6 +1021,168 @@
       icon.textContent = '▶';
       text.textContent = '자동 입력 시작';
     }
+  }
+
+  function getSelectedVisitors() {
+    const radio = document.querySelector('input[name="visitor"]:checked');
+    const multiChecked = Array.from(document.querySelectorAll('input[name="visitorMulti"]:checked'));
+    const single = radio ? VISITORS_DATA[parseInt(radio.value, 10)] : null;
+    const multi  = multiChecked
+      .map(c => VISITORS_DATA[parseInt(c.value, 10)])
+      .filter(v => !single || v.name !== single.name);
+    if (!single && multi.length === 0) return null;
+    return { single, multi };
+  }
+
+  function copyScript() {
+    const start = document.getElementById('startDate').value;
+    const end   = document.getElementById('endDate').value || start;
+    const selected = getSelectedVisitors();
+    if (!selected) { setStatus('ng', '⚠', '방문객을 선택해주세요.'); return; }
+    const script = buildConsoleScript(selected.single, selected.multi, start, end);
+    navigator.clipboard.writeText(script)
+      .then(() => {
+        showToast('스크립트 복사 완료!');
+        document.getElementById('howTo').className = 'how-to show';
+      });
+  }
+
+  function buildConsoleScript(singleVisitor, multiVisitors, startDate, endDate) {
+    const visitorJson = JSON.stringify(singleVisitor);
+    const extraJson   = JSON.stringify(multiVisitors);
+    return `(async () => {
+  const VISITOR = ${visitorJson};
+  const EXTRA = ${extraJson};
+  const V = [VISITOR, ...EXTRA].filter(Boolean);
+  const INFO = {
+    LOCATION_CODE: "3000",
+    PLACE_CODE: "4 ",
+    MANAGER_NAME: "채명주",
+    VISITOR_COMPANY: "ASML",
+    VISIT_START_DATE: "${startDate}",
+    VISIT_END_DATE: "${endDate}",
+    VISIT_START_HOUR: "9",
+    VISIT_START_MINUTE: "0",
+    VISIT_END_HOUR: "18",
+    VISIT_END_MINUTE: "0",
+  };
+
+  function setVal(el, v) {
+    if (!el) return;
+    el.value = v;
+    el.dispatchEvent(new Event('input',  { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  const qs    = n => Array.from(document.querySelectorAll('input,select,textarea')).find(e => e.name === n);
+  const qsAll = n => Array.from(document.querySelectorAll('input,select,textarea')).filter(e => e.name === n);
+
+  document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    const p = cb.closest('label,tr,li,div') || cb.parentElement;
+    const t = p ? p.innerText : '';
+    if (!t.includes('(선택)') && !t.includes('선택사항') &&
+        (cb.required || t.includes('(필수)') || t.includes('필수항목')) && !cb.checked) cb.click();
+  });
+  await new Promise(r => setTimeout(r, 200));
+
+  setVal(qs('Location'), INFO.LOCATION_CODE);
+  await new Promise(r => setTimeout(r, 400));
+
+  setVal(qs('VisitStartDate'),       INFO.VISIT_START_DATE);
+  setVal(qs('VisitStartDateHour'),   INFO.VISIT_START_HOUR);
+  setVal(qs('VisitStartDateMinute'), INFO.VISIT_START_MINUTE);
+  setVal(qs('VisitEndDate'),         INFO.VISIT_END_DATE);
+  setVal(qs('VisitEndDateHour'),     INFO.VISIT_END_HOUR);
+  setVal(qs('VisitEndDateMinute'),   INFO.VISIT_END_MINUTE);
+
+  document.querySelector('input[name="ContactName"]')?.click();
+  await new Promise(r => setTimeout(r, 500));
+  const nameInp = document.querySelector('#popSelectPerson input[name="Name"]');
+  if (nameInp) {
+    nameInp.focus(); nameInp.value = '채명주';
+    nameInp.dispatchEvent(new Event('input',  { bubbles: true }));
+    nameInp.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  document.querySelector('button[onclick="searchPerson();"]')?.click();
+  await new Promise(r => setTimeout(r, 1500));
+  const personRow = Array.from(document.querySelectorAll('#dvSearchPersonList tbody tr'))
+    .find(r => r.innerText.includes('채명주'));
+  if (personRow) (personRow.querySelector('a') || personRow.querySelector('td') || personRow).click();
+  await new Promise(r => setTimeout(r, 500));
+
+  setVal(qs('PlaceCodeID'), INFO.PLACE_CODE);
+  const purposeSel = qs('VisitPurposeCodeID');
+  if (purposeSel) {
+    const opt = Array.from(purposeSel.options).find(o =>
+      o.text.includes('공사') || o.text.includes('수리') || o.text.toLowerCase().includes('setup')
+    );
+    if (opt) setVal(purposeSel, opt.value);
+  }
+
+  for (let i = 0; i < V.length; i++) {
+    const nameInputs = qsAll('Name[]');
+    if (nameInputs[i]) {
+      nameInputs[i].focus(); nameInputs[i].value = V[i].name;
+      nameInputs[i].dispatchEvent(new Event('input', { bubbles: true }));
+      nameInputs[i].dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    const births = qsAll('BirthDate[]');
+    setVal(births[i], V[i].birth);
+    const cell = births[i] && (births[i].closest('tr,td,div,li') || births[i].parentElement);
+    const confirmBtn = cell && Array.from(cell.querySelectorAll('button,input[type=button],a')).find(b => {
+      const t = (b.innerText||b.value||'').trim();
+      return t==='확인'||t==='Confirm'||t==='Check';
+    });
+    if (confirmBtn) { confirmBtn.click(); await new Promise(r => setTimeout(r, 500)); }
+    const cos = qsAll('CompanyName[]');
+    setVal(cos[i], INFO.VISITOR_COMPANY);
+  }
+
+  const extraWithLaptop = EXTRA.filter(v => v.laptop_sn);
+  if (extraWithLaptop.length > 0) {
+    if (typeof goCarryItem === 'function') goCarryItem(0);
+    await new Promise(r => setTimeout(r, 1500));
+    for (let i = 0; i < extraWithLaptop.length; i++) {
+      const allNames = document.querySelectorAll('input[name="ItemName"]');
+      const itemNameEl = allNames[allNames.length - 1];
+      if (itemNameEl) {
+        setVal(itemNameEl, '노트북');
+        setVal(document.querySelectorAll('input[name="ItemSN"]')[allNames.length-1], extraWithLaptop[i].laptop_sn);
+        setVal(document.querySelectorAll('input[name="Quantity"]')[allNames.length-1], '1');
+      }
+      await new Promise(r => setTimeout(r, 400));
+      if (i === extraWithLaptop.length - 1) {
+        document.querySelector('.pop-btn-green')?.click();
+      } else {
+        (document.getElementById('btn-add-carryitem') || document.querySelector('[onclick*="addCarryItem"]'))?.click();
+        await new Promise(r => setTimeout(r, 600));
+      }
+    }
+  }
+
+  console.log('✅ 입력 완료:', V.map(v=>v.name).join(', '));
+  const autoSubmit = confirm('✅ 입력이 완료되었습니다. 자동으로 제출할까요?');
+  if (autoSubmit) {
+    setTimeout(() => {
+      const btn = Array.from(document.querySelectorAll('button, input[type=submit]')).find(el => {
+        const t = (el.innerText || el.value || '').trim();
+        return t === '신청' || t === 'Apply' || (el.type === 'submit' && t.includes('신청'));
+      });
+      if (btn) { btn.scrollIntoView({ behavior: 'smooth', block: 'center' }); btn.click(); }
+    }, 1000);
+  }
+})();`;
+  }
+
+  function toggleChangelog(e) {
+    if (e && e.target !== document.getElementById('changelogBackdrop')) return;
+    document.getElementById('changelogBackdrop').classList.toggle('show');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show';
+    setTimeout(() => { t.className = 'toast'; }, 3500);
   }
 
   checkHealth();
