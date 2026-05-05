@@ -29,13 +29,15 @@ const INFO = {
 // 콘솔 스크립트와 동일한 로직을 page.evaluate(string)으로 실행
 // page.evaluate(function(){}) 방식은 esbuild가 __name 헬퍼를 주입해 오류 발생
 // page.evaluate(string) 방식은 번들러 변환 없이 브라우저에서 직접 실행
-function buildScript(visitors, startDate, endDate) {
+// laptopVisitors: 휴대물품(노트북)을 추가할 방문객 배열 (인원추가 탭 선택자만)
+function buildScript(visitors, laptopVisitors, startDate, endDate) {
   function esc(obj) {
     return JSON.stringify(obj).replace(/[^\x00-\x7F]/g, c =>
       '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0')
     );
   }
   const V = esc(visitors);
+  const LV = esc(laptopVisitors);
   const I = esc({
     LOCATION_CODE: INFO.LOCATION_CODE,
     PLACE_CODE: INFO.PLACE_CODE,
@@ -51,6 +53,7 @@ function buildScript(visitors, startDate, endDate) {
 
   return `(async () => {
   const V = ${V};
+  const LV = ${LV};
   const I = ${I};
 
   function setVal(el, v) {
@@ -129,8 +132,8 @@ function buildScript(visitors, startDate, endDate) {
       setVal(cos[i], I.VISITOR_COMPANY);
     }
 
-    // 노트북 휴대물품
-    const withLaptop = V.filter(v => v.laptop_sn);
+    // 노트북 휴대물품 (인원추가 탭 선택자만)
+    const withLaptop = LV;
     if (withLaptop.length > 0) {
       if (typeof goCarryItem === 'function') goCarryItem(0);
       await new Promise(r => setTimeout(r, 1500));
@@ -289,10 +292,11 @@ export default {
       if (!startDate) return jsonRes({ ok: false, error: "방문시작일이 누락되었습니다." });
 
       const endDate = rawEndDate && rawEndDate >= startDate ? rawEndDate : startDate;
-      const visitors = [
-        singleIndex != null ? INFO.VISITORS[singleIndex] : null,
-        ...(Array.isArray(extraIndices) ? extraIndices.map(i => INFO.VISITORS[i]) : []),
-      ].filter(Boolean);
+      const singleVisitor = singleIndex != null ? INFO.VISITORS[singleIndex] : null;
+      const extraVisitors = (Array.isArray(extraIndices) ? extraIndices.map(i => INFO.VISITORS[i]) : []).filter(Boolean);
+      const visitors = [singleVisitor, ...extraVisitors].filter(Boolean);
+      // 휴대물품은 인원추가 탭 선택자 중 laptop_sn이 있는 방문객만
+      const laptopVisitors = extraVisitors.filter(v => v.laptop_sn);
 
       if (visitors.length === 0) return jsonRes({ ok: false, error: "유효한 방문객이 없습니다." });
 
@@ -346,16 +350,16 @@ export default {
           await page.waitForTimeout(3000);
 
           const shot3 = await takeScreenshot(page);
-          await send(3, "방문신청 버튼 클릭 완료", { screenshot: shot3, shotKey: "apply" });
+          await send(3, "방문신청 버튼 클릭 완료", { screenshot: shot3, shotKey: "visitors" });
 
           stage = "양식 자동 입력";
           await send(4, `양식 자동 입력 중... (${visitors.length}명)`);
-          const fillResult = await page.evaluate(buildScript(visitors, startDate, endDate));
+          const fillResult = await page.evaluate(buildScript(visitors, laptopVisitors, startDate, endDate));
           if (!fillResult || !fillResult.ok) throw new Error(fillResult?.error || "폼 입력 실패");
 
           // 신청 버튼 클릭 직전 스크린샷 전송
           const preShot = await takeScreenshot(page);
-          await send(4, "입력 완료 — 신청 버튼 클릭 전", { screenshot: preShot, shotKey: "presubmit" });
+          await send(4, "입력 완료 — 신청 버튼 클릭 전", { screenshot: preShot, shotKey: "equipment" });
 
           // 신청 버튼 클릭
           stage = "신청 버튼 클릭";
@@ -385,7 +389,7 @@ export default {
             msg: submitOk
               ? `방문신청 완료 (${visitors.map(v => v.name).join(', ')})`
               : "신청 버튼을 찾을 수 없습니다.",
-            screenshot: finalShot, shotKey: "final",
+            screenshot: finalShot, shotKey: "submit_result",
           });
 
         } catch (e) {
