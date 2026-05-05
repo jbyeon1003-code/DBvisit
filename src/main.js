@@ -331,28 +331,26 @@ export default {
           await page.goto(INFO.TARGET_URL, { waitUntil: "networkidle0", timeout: 20000 });
           await page.waitForTimeout(1000);
 
-          // 교육/공지 팝업 닫기
+          // 교육 팝업 닫기 — '취소' 버튼만 정확히 클릭
           await page.evaluate(`(() => {
-            const closeEl = Array.from(document.querySelectorAll('button,a,[class*=close],[id*=close]')).find(el => {
-              const t = (el.innerText||'').trim();
-              const c = (el.className||'') + (el.id||'');
-              return t==='닫기'||t==='Close'||t==='\xd7'||c.toLowerCase().includes('close');
-            });
-            if (closeEl) closeEl.click();
+            const btn = Array.from(document.querySelectorAll('button')).find(b =>
+              (b.textContent||'').trim() === '취소'
+            );
+            if (btn) btn.click();
           })()`);
-          await page.waitForTimeout(500);
+          await page.waitForTimeout(1000);
 
           stage = "방문신청 버튼 클릭";
           await send(3, "방문신청 버튼 클릭 중...");
           const clicked = await page.evaluate(`(() => {
             const btn = Array.from(document.querySelectorAll('button,a')).find(b => {
-              const t = (b.innerText||'').trim();
-              return (t==='방문신청'||t==='Apply Visit') && t.length <= 10;
+              const t = (b.textContent||'').replace(/\\s+/g, ' ').trim();
+              return t === '방문신청' || t === 'Apply Visit';
             });
             if (btn) { btn.scrollIntoView({behavior:'instant',block:'center'}); btn.click(); return true; }
             return false;
           })()`);
-          if (!clicked) throw new Error("'방문신청' 버튼 미발견");
+          if (!clicked) throw new Error("'방문신청'/'Apply Visit' 버튼 미발견");
           await page.waitForTimeout(3000);
 
           const shot3 = await takeScreenshot(page);
