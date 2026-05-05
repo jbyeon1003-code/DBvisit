@@ -358,11 +358,22 @@ export default {
 
           stage = "양식 자동 입력";
           await send(4, `양식 자동 입력 중... (${visitors.length}명)`);
-          const result = await page.evaluate(buildScript(visitors, startDate, endDate));
+
+          let result;
+          try {
+            result = await page.evaluate(buildScript(visitors, startDate, endDate));
+          } catch (e) {
+            // 페이지 이동(신청 완료)으로 evaluate 컨텍스트가 닫히는 정상 케이스
+            if (e.message.includes('Target closed') || e.message.includes('Session closed') || e.message.includes('Execution context')) {
+              result = { ok: true, count: visitors.length, navigated: true };
+            } else {
+              throw e;
+            }
+          }
 
           if (!result || !result.ok) throw new Error(result?.error || "스크립트 실행 실패");
 
-          const screenshot = await takeScreenshot(page);
+          const screenshot = await takeScreenshot(page).catch(() => null);
           await send(5, "신청 완료!", {
             done: true, ok: true,
             msg: `방문신청 완료 (${visitors.map(v => v.name).join(', ')})`,
