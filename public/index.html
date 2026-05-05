@@ -752,7 +752,7 @@
 
   // 0단계: [방문 신청] 버튼 클릭 → 동의 팝업 오픈
   const visitBtn = Array.from(document.querySelectorAll('button, a, input[type=button]'))
-    .find(el => (el.innerText || el.value || '').replace(/\\s+/g, '').includes('방문신청'));
+    .find(el => { const t = (el.innerText || el.value || '').replace(/\\s+/g, ''); return t.includes('방문신청') && t.length <= 10; });
   if (!visitBtn) { console.error('❌ 방문신청 버튼을 찾을 수 없습니다.'); return; }
   visitBtn.click();
   await new Promise(r => setTimeout(r, 1500));
