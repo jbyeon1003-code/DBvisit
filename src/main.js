@@ -1,5 +1,8 @@
 import puppeteer from "@cloudflare/puppeteer";
 
+// 테스트 중 신청 버튼 클릭 비활성화 — true로 변경하면 실제 신청 진행
+const SUBMIT_ENABLED = false;
+
 const INFO = {
   VISITORS: [
     { name: "한준석", birth: "1977-01-03", laptop_sn: null },
@@ -409,36 +412,44 @@ export default {
             await page.waitForTimeout(500);
           }
 
-          // 신청 버튼 클릭
+          // 신청 버튼 클릭 (SUBMIT_ENABLED = false 이면 스킵)
           stage = "신청 버튼 클릭";
-          await send(5, "신청 버튼 클릭 중...");
-          let submitOk = false;
-          try {
-            submitOk = await page.evaluate(`(() => {
-              const btn = Array.from(document.querySelectorAll('button,input[type=submit]')).find(el => {
-                const t = (el.innerText||el.value||'').replace(/\\s+/g,' ').trim();
-                return t==='신청'||t==='Apply'||t==='Application';
-              });
-              if (btn) { btn.scrollIntoView({behavior:'smooth',block:'center'}); btn.click(); return true; }
-              return false;
-            })()`);
-          } catch (e) {
-            // 페이지 이동 = 신청 완료
-            if (e.message.includes('Target closed') || e.message.includes('Session closed') || e.message.includes('Execution context')) {
-              submitOk = true;
-            } else {
-              throw e;
+          if (!SUBMIT_ENABLED) {
+            const testShot = await takeScreenshot(page).catch(() => null);
+            await send(5, "[테스트] 신청 버튼 클릭 비활성화 — 입력 내용을 확인하세요.", {
+              done: true, ok: true, submitOk: false,
+              msg: `[테스트 모드] 입력 완료 (${allVisitors.map(v => v.name).join(', ')}) — 신청 버튼은 클릭하지 않음`,
+              screenshot: testShot, shotKey: "submit_result",
+            });
+          } else {
+            await send(5, "신청 버튼 클릭 중...");
+            let submitOk = false;
+            try {
+              submitOk = await page.evaluate(`(() => {
+                const btn = Array.from(document.querySelectorAll('button,input[type=submit]')).find(el => {
+                  const t = (el.innerText||el.value||'').replace(/\\s+/g,' ').trim();
+                  return t==='신청'||t==='Apply'||t==='Application';
+                });
+                if (btn) { btn.scrollIntoView({behavior:'smooth',block:'center'}); btn.click(); return true; }
+                return false;
+              })()`);
+            } catch (e) {
+              if (e.message.includes('Target closed') || e.message.includes('Session closed') || e.message.includes('Execution context')) {
+                submitOk = true;
+              } else {
+                throw e;
+              }
             }
-          }
 
-          const finalShot = await takeScreenshot(page).catch(() => null);
-          await send(5, submitOk ? "신청 완료!" : "신청 버튼 미발견", {
-            done: true, ok: true, submitOk,
-            msg: submitOk
-              ? `방문신청 완료 (${allVisitors.map(v => v.name).join(', ')})`
-              : "신청 버튼을 찾을 수 없습니다.",
-            screenshot: finalShot, shotKey: "submit_result",
-          });
+            const finalShot = await takeScreenshot(page).catch(() => null);
+            await send(5, submitOk ? "신청 완료!" : "신청 버튼 미발견", {
+              done: true, ok: true, submitOk,
+              msg: submitOk
+                ? `방문신청 완료 (${allVisitors.map(v => v.name).join(', ')})`
+                : "신청 버튼을 찾을 수 없습니다.",
+              screenshot: finalShot, shotKey: "submit_result",
+            });
+          }
 
         } catch (e) {
           console.error(`[ERROR] ${stage}: ${e.message}`);
