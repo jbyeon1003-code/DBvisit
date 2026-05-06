@@ -32,8 +32,7 @@ const INFO = {
 // 콘솔 스크립트와 동일한 로직을 page.evaluate(string)으로 실행
 // page.evaluate(function(){}) 방식은 esbuild가 __name 헬퍼를 주입해 오류 발생
 // page.evaluate(string) 방식은 번들러 변환 없이 브라우저에서 직접 실행
-// laptopVisitors: 휴대물품(노트북)을 추가할 방문객 배열 (인원추가 탭 선택자만)
-function buildScript(visitors, extraVisitors, laptopVisitors, startDate, endDate) {
+function buildScript(visitors, extraVisitors, startDate, endDate) {
   function esc(obj) {
     return JSON.stringify(obj).replace(/[^\x00-\x7F]/g, c =>
       '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0')
@@ -41,7 +40,6 @@ function buildScript(visitors, extraVisitors, laptopVisitors, startDate, endDate
   }
   const V  = esc(visitors);
   const EV = esc(extraVisitors);
-  const LV = esc(laptopVisitors);
   const I = esc({
     LOCATION_CODE: INFO.LOCATION_CODE,
     PLACE_CODE: INFO.PLACE_CODE,
@@ -58,7 +56,6 @@ function buildScript(visitors, extraVisitors, laptopVisitors, startDate, endDate
   return `(async () => {
   const V  = ${V};
   const EV = ${EV};
-  const LV = ${LV};
   const I  = ${I};
 
   function setVal(el, v) {
@@ -137,16 +134,17 @@ function buildScript(visitors, extraVisitors, laptopVisitors, startDate, endDate
       setVal(cos[i], I.VISITOR_COMPANY);
     }
 
-    // 인원추가: extra visitors 이름·생년월일·소속 입력
+    // 방문자추가: extra visitors 1인당 (행 추가 → 정보 입력 → 휴대물품 S/N)
     for (let i = 0; i < EV.length; i++) {
+      // 방문자추가 버튼 클릭
       const addBtn =
-        document.getElementById('btn-add-visitor') ||
         document.querySelector('[onclick*="addVisitor"],[onclick*="addPerson"],[onclick*="AddVisitor"]') ||
         Array.from(document.querySelectorAll('button,a')).find(b =>
-          (b.innerText||'').trim().includes('인원추가')
+          (b.innerText||'').trim().includes('방문자추가') || (b.innerText||'').trim().includes('인원추가')
         );
-      if (addBtn) { addBtn.click(); await new Promise(r => setTimeout(r, 600)); }
+      if (addBtn) { addBtn.click(); await new Promise(r => setTimeout(r, 800)); }
 
+      // 새로 추가된 마지막 행에 이름·생년월일·소속 입력
       const nameInputs = qsAll('Name[]');
       const li = nameInputs.length - 1;
       if (nameInputs[li]) {
@@ -165,31 +163,25 @@ function buildScript(visitors, extraVisitors, laptopVisitors, startDate, endDate
       if (confirmBtn) { confirmBtn.click(); await new Promise(r => setTimeout(r, 500)); }
       const cos = qsAll('CompanyName[]');
       setVal(cos[li], I.VISITOR_COMPANY);
-    }
 
-    // 노트북 휴대물품 (인원추가 탭 선택자만)
-    const withLaptop = LV;
-    if (withLaptop.length > 0) {
-      if (typeof goCarryItem === 'function') goCarryItem(0);
-      await new Promise(r => setTimeout(r, 1500));
-      for (let i = 0; i < withLaptop.length; i++) {
-        const allNames = document.querySelectorAll('input[name="ItemName"]');
-        const last = allNames.length - 1;
-        if (allNames[last]) {
-          setVal(allNames[last], '노트북');
-          setVal(document.querySelectorAll('input[name="ItemSN"]')[last], withLaptop[i].laptop_sn);
+      // 해당 행의 휴대물품 S/N 입력 (laptop_sn 있는 경우)
+      if (EV[i].laptop_sn) {
+        if (typeof goCarryItem === 'function') goCarryItem(i + 1); // 0 = singleVisitor
+        await new Promise(r => setTimeout(r, 1500));
+        const itemNames = document.querySelectorAll('input[name="ItemName"]');
+        const last = itemNames.length - 1;
+        if (itemNames[last]) {
+          setVal(itemNames[last], '노트북');
+          setVal(document.querySelectorAll('input[name="ItemSN"]')[last], EV[i].laptop_sn);
           setVal(document.querySelectorAll('input[name="Quantity"]')[last], '1');
         }
         await new Promise(r => setTimeout(r, 400));
-        if (i < withLaptop.length - 1) {
-          (document.getElementById('btn-add-carryitem') || document.querySelector('[onclick*="addCarryItem"]'))?.click();
-          await new Promise(r => setTimeout(r, 600));
-        }
-        // 마지막 항목 후 팝업을 닫지 않고 반환 → Puppeteer가 스크린샷 후 닫음
+        document.querySelector('.pop-btn-green')?.click();
+        await new Promise(r => setTimeout(r, 600));
       }
     }
 
-    return { ok: true, count: V.length, hasLaptop: withLaptop.length > 0 };
+    return { ok: true, count: V.length };
   } catch (e) {
     return { ok: false, error: e.message };
   }
@@ -401,14 +393,10 @@ export default {
 
           stage = "양식 자동 입력";
           await send(4, `양식 자동 입력 중... (${singleVisitor.name})`);
-          const fillResult = await page.evaluate(buildScript(formVisitors, extraVisitors, laptopVisitors, startDate, endDate));
+          const fillResult = await page.evaluate(buildScript(formVisitors, extraVisitors, startDate, endDate));
           if (!fillResult || !fillResult.ok) throw new Error(fillResult?.error || "폼 입력 실패");
 
-          // 휴대물품 팝업 닫기 → 메인 폼 화면 스크린샷
-          if (fillResult.hasLaptop) {
-            await page.evaluate(`(()=>{ document.querySelector('.pop-btn-green')?.click(); })()`);
-            await page.waitForTimeout(800);
-          }
+          // 모든 입력 완료 후 메인 폼 스크린샷
           const formShot = await takeScreenshot(page);
           await send(4, "입력 완료 — 방문객 정보 확인", { screenshot: formShot, shotKey: "equipment" });
 
