@@ -181,13 +181,12 @@ function buildScript(visitors, extraVisitors, laptopVisitors, startDate, endDate
         if (i < withLaptop.length - 1) {
           (document.getElementById('btn-add-carryitem') || document.querySelector('[onclick*="addCarryItem"]'))?.click();
           await new Promise(r => setTimeout(r, 600));
-        } else {
-          document.querySelector('.pop-btn-green')?.click();
         }
+        // 마지막 항목 후 팝업을 닫지 않고 반환 → Puppeteer가 스크린샷 후 닫음
       }
     }
 
-    return { ok: true, count: V.length };
+    return { ok: true, count: V.length, hasLaptop: withLaptop.length > 0 };
   } catch (e) {
     return { ok: false, error: e.message };
   }
@@ -402,9 +401,13 @@ export default {
           const fillResult = await page.evaluate(buildScript(formVisitors, extraVisitors, laptopVisitors, startDate, endDate));
           if (!fillResult || !fillResult.ok) throw new Error(fillResult?.error || "폼 입력 실패");
 
-          // 신청 버튼 클릭 직전 스크린샷 전송
-          const preShot = await takeScreenshot(page);
-          await send(4, "입력 완료 — 신청 버튼 클릭 전", { screenshot: preShot, shotKey: "equipment" });
+          // 휴대물품 팝업이 열려 있으면 스크린샷 찍고 닫기
+          if (fillResult.hasLaptop) {
+            const laptopShot = await takeScreenshot(page);
+            await send(4, "휴대물품 입력 완료", { screenshot: laptopShot, shotKey: "equipment" });
+            await page.evaluate(`(()=>{ document.querySelector('.pop-btn-green')?.click(); })()`);
+            await page.waitForTimeout(500);
+          }
 
           // 신청 버튼 클릭
           stage = "신청 버튼 클릭";
