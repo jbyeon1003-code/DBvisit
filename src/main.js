@@ -347,10 +347,21 @@ export default {
             return false;
           })()`);
           if (!clicked) throw new Error("'방문신청'/'Apply Visit' 버튼 미발견");
-          await page.waitForTimeout(3000);
+
+          // 폼 필드 등장 여부로 실제 버튼 클릭 성공 검증 (최대 8초 폴링)
+          let formOpened = false;
+          for (let i = 0; i < 16; i++) {
+            await page.waitForTimeout(500);
+            formOpened = await page.evaluate(`(()=>!!document.querySelector('select[name="Location"],input[name="VisitStartDate"]'))()`);
+            if (formOpened) break;
+          }
 
           const shot3 = await takeScreenshot(page);
-          await send(3, "방문신청 버튼 클릭 완료", { screenshot: shot3, shotKey: "visitors" });
+          if (!formOpened) {
+            await send(3, "방문신청 폼이 열리지 않았습니다", { screenshot: shot3, shotKey: "error", done: true, ok: false, stage, error: "방문신청 버튼 클릭 후 폼이 열리지 않음 — 페이지를 직접 확인해주세요." });
+            throw new Error("방문신청 버튼 클릭 후 폼이 열리지 않음");
+          }
+          await send(3, "방문신청 폼 열림 확인 완료", { screenshot: shot3, shotKey: "visitors" });
 
           stage = "양식 자동 입력";
           await send(4, `양식 자동 입력 중... (${visitors.length}명)`);
