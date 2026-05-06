@@ -373,7 +373,9 @@ export default {
           const fillResult = await page.evaluate(buildScript(formVisitors, extraVisitors, startDate, endDate));
           if (!fillResult || !fillResult.ok) throw new Error(fillResult?.error || "폼 입력 실패");
 
-          // 모든 입력 완료 후 메인 폼 스크린샷
+          // 페이지 최하단으로 스크롤 후 스크린샷
+          await page.evaluate(`(()=>{ window.scrollTo(0, document.body.scrollHeight); })()`);
+          await page.waitForTimeout(500);
           const formShot = await takeScreenshot(page);
           await send(4, "입력 완료 — 방문객 정보 확인", { screenshot: formShot, shotKey: "equipment" });
 
