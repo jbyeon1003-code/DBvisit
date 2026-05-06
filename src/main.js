@@ -151,14 +151,12 @@ function buildScript(visitors, extraVisitors, startDate, endDate) {
         if (i < withLaptop.length - 1) {
           (document.getElementById('btn-add-carryitem') || document.querySelector('[onclick*="addCarryItem"]'))?.click();
           await new Promise(r => setTimeout(r, 600));
-        } else {
-          document.querySelector('.pop-btn-green')?.click();
-          await new Promise(r => setTimeout(r, 500));
         }
+        // 마지막 항목: 팝업 닫지 않음 → Puppeteer가 스크린샷 찍고 닫음
       }
     }
 
-    return { ok: true, count: V.length };
+    return { ok: true, count: V.length, hasLaptop: withLaptop.length > 0 };
   } catch (e) {
     return { ok: false, error: e.message };
   }
@@ -373,22 +371,13 @@ export default {
           const fillResult = await page.evaluate(buildScript(formVisitors, extraVisitors, startDate, endDate));
           if (!fillResult || !fillResult.ok) throw new Error(fillResult?.error || "폼 입력 실패");
 
-          // 알림수신방식(또는 영문) 또는 신청 버튼으로 스크롤해 뷰포트에 표시
-          await page.evaluate(`(()=>{
-            const target =
-              Array.from(document.querySelectorAll('*')).find(el =>
-                el.children.length === 0 &&
-                ['알림수신방식','Notification reception method','Notification Reception Method'].includes((el.innerText||'').trim())
-              ) ||
-              Array.from(document.querySelectorAll('button,input[type=submit]')).find(el =>
-                ['신청','Apply','Application'].includes((el.innerText||el.value||'').trim())
-              );
-            if (target) target.scrollIntoView({ behavior: 'instant', block: 'center' });
-            else { document.documentElement.scrollTop = document.documentElement.scrollHeight; }
-          })()`);
-          await page.waitForTimeout(500);
-          const formShot = await takeScreenshot(page, false);
-          await send(4, "입력 완료 — 방문객 정보 확인", { screenshot: formShot, shotKey: "equipment" });
+          // 휴대물품 팝업 열린 상태로 스크린샷 → 닫기
+          if (fillResult.hasLaptop) {
+            const laptopShot = await takeScreenshot(page, false);
+            await send(4, "휴대물품 입력 완료", { screenshot: laptopShot, shotKey: "equipment" });
+            await page.evaluate(`(()=>{ document.querySelector('.pop-btn-green')?.click(); })()`);
+            await page.waitForTimeout(500);
+          }
 
           // 신청 버튼 클릭 (SUBMIT_ENABLED = false 이면 스킵)
           stage = "신청 버튼 클릭";
