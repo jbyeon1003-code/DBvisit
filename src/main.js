@@ -134,50 +134,27 @@ function buildScript(visitors, extraVisitors, startDate, endDate) {
       setVal(cos[i], I.VISITOR_COMPANY);
     }
 
-    // 방문자추가: extra visitors 1인당 (행 추가 → 정보 입력 → 휴대물품 S/N)
-    for (let i = 0; i < EV.length; i++) {
-      // 방문자추가 버튼 클릭
-      const addBtn =
-        document.querySelector('[onclick*="addVisitor"],[onclick*="addPerson"],[onclick*="AddVisitor"]') ||
-        Array.from(document.querySelectorAll('button,a')).find(b =>
-          (b.innerText||'').trim().includes('방문자추가') || (b.innerText||'').trim().includes('인원추가')
-        );
-      if (addBtn) { addBtn.click(); await new Promise(r => setTimeout(r, 800)); }
-
-      // 새로 추가된 마지막 행에 이름·생년월일·소속 입력
-      const nameInputs = qsAll('Name[]');
-      const li = nameInputs.length - 1;
-      if (nameInputs[li]) {
-        nameInputs[li].focus();
-        nameInputs[li].value = EV[i].name;
-        nameInputs[li].dispatchEvent(new Event('input',  { bubbles: true }));
-        nameInputs[li].dispatchEvent(new Event('change', { bubbles: true }));
-      }
-      const births = qsAll('BirthDate[]');
-      setVal(births[li], EV[i].birth);
-      const cell = births[li] && (births[li].closest('tr,td,div,li') || births[li].parentElement);
-      const confirmBtn = cell && Array.from(cell.querySelectorAll('button,input[type=button],a')).find(b => {
-        const t = (b.innerText || b.value || '').trim();
-        return t === '확인' || t === 'Confirm' || t === 'Check';
-      });
-      if (confirmBtn) { confirmBtn.click(); await new Promise(r => setTimeout(r, 500)); }
-      const cos = qsAll('CompanyName[]');
-      setVal(cos[li], I.VISITOR_COMPANY);
-
-      // 해당 행의 휴대물품 S/N 입력 (laptop_sn 있는 경우)
-      if (EV[i].laptop_sn) {
-        if (typeof goCarryItem === 'function') goCarryItem(i + 1); // 0 = singleVisitor
-        await new Promise(r => setTimeout(r, 1500));
+    // 휴대물품: 추가인원의 노트북 S/N을 휴대물품 팝업에 입력
+    const withLaptop = EV.filter(v => v.laptop_sn);
+    if (withLaptop.length > 0) {
+      if (typeof goCarryItem === 'function') goCarryItem(0);
+      await new Promise(r => setTimeout(r, 1500));
+      for (let i = 0; i < withLaptop.length; i++) {
         const itemNames = document.querySelectorAll('input[name="ItemName"]');
         const last = itemNames.length - 1;
         if (itemNames[last]) {
           setVal(itemNames[last], '노트북');
-          setVal(document.querySelectorAll('input[name="ItemSN"]')[last], EV[i].laptop_sn);
+          setVal(document.querySelectorAll('input[name="ItemSN"]')[last], withLaptop[i].laptop_sn);
           setVal(document.querySelectorAll('input[name="Quantity"]')[last], '1');
         }
         await new Promise(r => setTimeout(r, 400));
-        document.querySelector('.pop-btn-green')?.click();
-        await new Promise(r => setTimeout(r, 600));
+        if (i < withLaptop.length - 1) {
+          (document.getElementById('btn-add-carryitem') || document.querySelector('[onclick*="addCarryItem"]'))?.click();
+          await new Promise(r => setTimeout(r, 600));
+        } else {
+          document.querySelector('.pop-btn-green')?.click();
+          await new Promise(r => setTimeout(r, 500));
+        }
       }
     }
 
