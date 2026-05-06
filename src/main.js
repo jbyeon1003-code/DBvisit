@@ -30,13 +30,14 @@ const INFO = {
 // page.evaluate(function(){}) 방식은 esbuild가 __name 헬퍼를 주입해 오류 발생
 // page.evaluate(string) 방식은 번들러 변환 없이 브라우저에서 직접 실행
 // laptopVisitors: 휴대물품(노트북)을 추가할 방문객 배열 (인원추가 탭 선택자만)
-function buildScript(visitors, laptopVisitors, startDate, endDate) {
+function buildScript(visitors, extraVisitors, laptopVisitors, startDate, endDate) {
   function esc(obj) {
     return JSON.stringify(obj).replace(/[^\x00-\x7F]/g, c =>
       '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0')
     );
   }
-  const V = esc(visitors);
+  const V  = esc(visitors);
+  const EV = esc(extraVisitors);
   const LV = esc(laptopVisitors);
   const I = esc({
     LOCATION_CODE: INFO.LOCATION_CODE,
@@ -52,9 +53,10 @@ function buildScript(visitors, laptopVisitors, startDate, endDate) {
   });
 
   return `(async () => {
-  const V = ${V};
+  const V  = ${V};
+  const EV = ${EV};
   const LV = ${LV};
-  const I = ${I};
+  const I  = ${I};
 
   function setVal(el, v) {
     if (!el) return;
@@ -130,6 +132,36 @@ function buildScript(visitors, laptopVisitors, startDate, endDate) {
       if (confirmBtn) { confirmBtn.click(); await new Promise(r => setTimeout(r, 500)); }
       const cos = qsAll('CompanyName[]');
       setVal(cos[i], I.VISITOR_COMPANY);
+    }
+
+    // 인원추가: extra visitors 이름·생년월일·소속 입력
+    for (let i = 0; i < EV.length; i++) {
+      const addBtn =
+        document.getElementById('btn-add-visitor') ||
+        document.querySelector('[onclick*="addVisitor"],[onclick*="addPerson"],[onclick*="AddVisitor"]') ||
+        Array.from(document.querySelectorAll('button,a')).find(b =>
+          (b.innerText||'').trim().includes('인원추가')
+        );
+      if (addBtn) { addBtn.click(); await new Promise(r => setTimeout(r, 600)); }
+
+      const nameInputs = qsAll('Name[]');
+      const li = nameInputs.length - 1;
+      if (nameInputs[li]) {
+        nameInputs[li].focus();
+        nameInputs[li].value = EV[i].name;
+        nameInputs[li].dispatchEvent(new Event('input',  { bubbles: true }));
+        nameInputs[li].dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      const births = qsAll('BirthDate[]');
+      setVal(births[li], EV[i].birth);
+      const cell = births[li] && (births[li].closest('tr,td,div,li') || births[li].parentElement);
+      const confirmBtn = cell && Array.from(cell.querySelectorAll('button,input[type=button],a')).find(b => {
+        const t = (b.innerText || b.value || '').trim();
+        return t === '확인' || t === 'Confirm' || t === 'Check';
+      });
+      if (confirmBtn) { confirmBtn.click(); await new Promise(r => setTimeout(r, 500)); }
+      const cos = qsAll('CompanyName[]');
+      setVal(cos[li], I.VISITOR_COMPANY);
     }
 
     // 노트북 휴대물품 (인원추가 탭 선택자만)
@@ -367,7 +399,7 @@ export default {
 
           stage = "양식 자동 입력";
           await send(4, `양식 자동 입력 중... (${singleVisitor.name})`);
-          const fillResult = await page.evaluate(buildScript(formVisitors, laptopVisitors, startDate, endDate));
+          const fillResult = await page.evaluate(buildScript(formVisitors, extraVisitors, laptopVisitors, startDate, endDate));
           if (!fillResult || !fillResult.ok) throw new Error(fillResult?.error || "폼 입력 실패");
 
           // 신청 버튼 클릭 직전 스크린샷 전송
