@@ -294,11 +294,13 @@ export default {
       const endDate = rawEndDate && rawEndDate >= startDate ? rawEndDate : startDate;
       const singleVisitor = singleIndex != null ? INFO.VISITORS[singleIndex] : null;
       const extraVisitors = (Array.isArray(extraIndices) ? extraIndices.map(i => INFO.VISITORS[i]) : []).filter(Boolean);
-      const visitors = [singleVisitor, ...extraVisitors].filter(Boolean);
+      // 폼 입력은 선택된 1명만, 완료 메시지에는 전체 인원 표시
+      const formVisitors = [singleVisitor].filter(Boolean);
+      const allVisitors = [singleVisitor, ...extraVisitors].filter(Boolean);
       // 휴대물품은 인원추가 탭 선택자 중 laptop_sn이 있는 방문객만
       const laptopVisitors = extraVisitors.filter(v => v.laptop_sn);
 
-      if (visitors.length === 0) return jsonRes({ ok: false, error: "유효한 방문객이 없습니다." });
+      if (!singleVisitor) return jsonRes({ ok: false, error: "방문객을 선택해주세요." });
 
       const { readable, writable } = new TransformStream();
       const writer = writable.getWriter();
@@ -364,8 +366,8 @@ export default {
           await send(3, "방문신청 폼 열림 확인 완료", { screenshot: shot3, shotKey: "visitors" });
 
           stage = "양식 자동 입력";
-          await send(4, `양식 자동 입력 중... (${visitors.length}명)`);
-          const fillResult = await page.evaluate(buildScript(visitors, laptopVisitors, startDate, endDate));
+          await send(4, `양식 자동 입력 중... (${singleVisitor.name})`);
+          const fillResult = await page.evaluate(buildScript(formVisitors, laptopVisitors, startDate, endDate));
           if (!fillResult || !fillResult.ok) throw new Error(fillResult?.error || "폼 입력 실패");
 
           // 신청 버튼 클릭 직전 스크린샷 전송
@@ -398,7 +400,7 @@ export default {
           await send(5, submitOk ? "신청 완료!" : "신청 버튼 미발견", {
             done: true, ok: true, submitOk,
             msg: submitOk
-              ? `방문신청 완료 (${visitors.map(v => v.name).join(', ')})`
+              ? `방문신청 완료 (${allVisitors.map(v => v.name).join(', ')})`
               : "신청 버튼을 찾을 수 없습니다.",
             screenshot: finalShot, shotKey: "submit_result",
           });
