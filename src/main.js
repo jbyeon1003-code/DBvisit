@@ -358,12 +358,12 @@ export default {
             if (formOpened) break;
           }
 
-          const shot3 = await takeScreenshot(page);
           if (!formOpened) {
-            await send(3, "방문신청 폼이 열리지 않았습니다", { screenshot: shot3, shotKey: "error", done: true, ok: false, stage, error: "방문신청 버튼 클릭 후 폼이 열리지 않음 — 페이지를 직접 확인해주세요." });
+            const errShot = await takeScreenshot(page);
+            await send(3, "방문신청 폼이 열리지 않았습니다", { screenshot: errShot, shotKey: "error", done: true, ok: false, stage, error: "방문신청 버튼 클릭 후 폼이 열리지 않음 — 페이지를 직접 확인해주세요." });
             throw new Error("방문신청 버튼 클릭 후 폼이 열리지 않음");
           }
-          await send(3, "방문신청 폼 열림 확인 완료", { screenshot: shot3, shotKey: "visitors" });
+          await send(3, "방문신청 폼 열림 확인 완료");
 
           stage = "양식 자동 입력";
           await send(4, `양식 자동 입력 중... (${singleVisitor.name})`);
