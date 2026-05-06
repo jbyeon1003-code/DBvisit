@@ -165,9 +165,9 @@ function buildScript(visitors, extraVisitors, startDate, endDate) {
 })()`;
 }
 
-async function takeScreenshot(page) {
+async function takeScreenshot(page, fullPage = true) {
   try {
-    const shot = await page.screenshot({ type: "jpeg", quality: 70, fullPage: true });
+    const shot = await page.screenshot({ type: "jpeg", quality: 70, fullPage });
     const bytes = new Uint8Array(shot);
     let binary = "";
     const CHUNK = 8192;
@@ -373,20 +373,21 @@ export default {
           const fillResult = await page.evaluate(buildScript(formVisitors, extraVisitors, startDate, endDate));
           if (!fillResult || !fillResult.ok) throw new Error(fillResult?.error || "폼 입력 실패");
 
-          // 알림수신방식 또는 신청 버튼으로 스크롤해 하단 표시
+          // 알림수신방식(또는 영문) 또는 신청 버튼으로 스크롤해 뷰포트에 표시
           await page.evaluate(`(()=>{
             const target =
               Array.from(document.querySelectorAll('*')).find(el =>
-                el.children.length === 0 && (el.innerText||'').trim() === '알림수신방식'
+                el.children.length === 0 &&
+                ['알림수신방식','Notification reception method','Notification Reception Method'].includes((el.innerText||'').trim())
               ) ||
               Array.from(document.querySelectorAll('button,input[type=submit]')).find(el =>
                 ['신청','Apply','Application'].includes((el.innerText||el.value||'').trim())
               );
             if (target) target.scrollIntoView({ behavior: 'instant', block: 'center' });
-            else window.scrollTo(0, document.body.scrollHeight);
+            else { document.documentElement.scrollTop = document.documentElement.scrollHeight; }
           })()`);
           await page.waitForTimeout(500);
-          const formShot = await takeScreenshot(page);
+          const formShot = await takeScreenshot(page, false);
           await send(4, "입력 완료 — 방문객 정보 확인", { screenshot: formShot, shotKey: "equipment" });
 
           // 신청 버튼 클릭 (SUBMIT_ENABLED = false 이면 스킵)
