@@ -373,8 +373,18 @@ export default {
           const fillResult = await page.evaluate(buildScript(formVisitors, extraVisitors, startDate, endDate));
           if (!fillResult || !fillResult.ok) throw new Error(fillResult?.error || "폼 입력 실패");
 
-          // 페이지 최하단으로 스크롤 후 스크린샷
-          await page.evaluate(`(()=>{ window.scrollTo(0, document.body.scrollHeight); })()`);
+          // 알림수신방식 또는 신청 버튼으로 스크롤해 하단 표시
+          await page.evaluate(`(()=>{
+            const target =
+              Array.from(document.querySelectorAll('*')).find(el =>
+                el.children.length === 0 && (el.innerText||'').trim() === '알림수신방식'
+              ) ||
+              Array.from(document.querySelectorAll('button,input[type=submit]')).find(el =>
+                ['신청','Apply','Application'].includes((el.innerText||el.value||'').trim())
+              );
+            if (target) target.scrollIntoView({ behavior: 'instant', block: 'center' });
+            else window.scrollTo(0, document.body.scrollHeight);
+          })()`);
           await page.waitForTimeout(500);
           const formShot = await takeScreenshot(page);
           await send(4, "입력 완료 — 방문객 정보 확인", { screenshot: formShot, shotKey: "equipment" });
