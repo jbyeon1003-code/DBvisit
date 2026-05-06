@@ -404,13 +404,13 @@ export default {
           const fillResult = await page.evaluate(buildScript(formVisitors, extraVisitors, laptopVisitors, startDate, endDate));
           if (!fillResult || !fillResult.ok) throw new Error(fillResult?.error || "폼 입력 실패");
 
-          // 휴대물품 팝업이 열려 있으면 스크린샷 찍고 닫기
+          // 휴대물품 팝업 닫기 → 메인 폼 화면 스크린샷
           if (fillResult.hasLaptop) {
-            const laptopShot = await takeScreenshot(page);
-            await send(4, "휴대물품 입력 완료", { screenshot: laptopShot, shotKey: "equipment" });
             await page.evaluate(`(()=>{ document.querySelector('.pop-btn-green')?.click(); })()`);
-            await page.waitForTimeout(500);
+            await page.waitForTimeout(800);
           }
+          const formShot = await takeScreenshot(page);
+          await send(4, "입력 완료 — 방문객 정보 확인", { screenshot: formShot, shotKey: "equipment" });
 
           // 신청 버튼 클릭 (SUBMIT_ENABLED = false 이면 스킵)
           stage = "신청 버튼 클릭";
