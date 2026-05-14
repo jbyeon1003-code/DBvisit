@@ -134,13 +134,85 @@
     .h-btn:hover { background: rgba(255,255,255,.18); }
 
     /* ──────── Layout ──────── */
-    .wrap {
-      max-width: 560px;
+    .page-layout {
+      display: flex;
+      gap: 20px;
+      max-width: 900px;
       margin: 20px auto 64px;
       padding: 0 16px;
+      align-items: flex-start;
+    }
+    .wrap {
+      flex: 1;
+      min-width: 0;
+      max-width: 560px;
       display: flex;
       flex-direction: column;
       gap: 10px;
+    }
+
+    /* ──────── History Panel ──────── */
+    .history-panel {
+      width: 240px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 20px;
+      background: var(--surface);
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+    .history-head {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .history-head-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--fg);
+    }
+    .history-clear-btn {
+      font-size: 10px;
+      color: var(--muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+    .history-clear-btn:hover { background: var(--border); }
+    .history-list {
+      padding: 8px;
+      max-height: 560px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .history-empty {
+      padding: 28px 12px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .history-entry {
+      padding: 9px 11px;
+      border-radius: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-size: 11px;
+      line-height: 1.6;
+    }
+    .history-time { font-size: 10px; color: var(--muted); }
+    .history-names { font-weight: 600; color: var(--fg); margin-top: 2px; }
+    .history-laptop { color: var(--muted); font-size: 10px; margin-top: 1px; }
+    @media (max-width: 700px) {
+      .page-layout { flex-direction: column; }
+      .history-panel { width: 100%; position: static; }
     }
 
     /* ──────── Card ──────── */
@@ -384,6 +456,18 @@
       cursor: zoom-in;
     }
     .shot-img.err { border-color: #FC8181; }
+    .field-log {
+      margin: 0;
+      padding: 12px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.8;
+      color: var(--fg);
+      white-space: pre;
+      overflow-x: auto;
+    }
     .shot-note {
       font-size: 11px;
       color: var(--muted);
@@ -585,14 +669,16 @@
 <header class="app-header">
   <span class="h-badge">DB HiTek</span>
   <span class="h-title">방문신청 자동화</span>
-  <span class="h-version" onclick="toggleChangelog()">v2.5</span>
+  <span class="h-version" onclick="toggleChangelog()">v3.1</span>
   <div class="h-right">
     <span class="h-dot" id="hDot"></span>
     <span class="h-status" id="hStatus">-</span>
     <button class="h-btn" onclick="checkHealth()">상태 확인</button>
+    <button class="h-btn" onclick="copyScript()" disabled style="opacity:0.35;cursor:not-allowed">📋 콘솔</button>
   </div>
 </header>
 
+<div class="page-layout">
 <div class="wrap">
 
   <!-- 1. 방문 기간 -->
@@ -627,7 +713,21 @@
     </div>
     <div class="card-body" style="padding-top:10px; padding-bottom:6px;">
       <div class="info-rows">
-        <div class="info-row"><span class="info-k">담당자</span><span class="info-v">채명주</span></div>
+        <div class="info-row">
+          <span class="info-k">담당자</span>
+          <span class="info-v">
+            <select id="managerSelect" style="font-family:inherit;font-size:14px;font-weight:500;color:#1A2740;background:#F4F7FC;border:1.5px solid #C8D3E8;border-radius:6px;padding:3px 8px;cursor:pointer;outline:none;">
+              <option value="채명주" selected>채명주</option>
+              <option value="이영휘">이영휘</option>
+              <option value="서형석">서형석</option>
+              <option value="윤여철">윤여철</option>
+              <option value="박종우">박종우</option>
+              <option value="권준혁">권준혁</option>
+              <option value="김재덕">김재덕</option>
+              <option value="박대용">박대용</option>
+            </select>
+          </span>
+        </div>
         <div class="info-row"><span class="info-k">부서</span><span class="info-v">제조기술1팀 (Fab2)</span></div>
         <div class="info-row"><span class="info-k">소속</span><span class="info-v">ASML</span></div>
         <div class="info-row"><span class="info-k">출입지역</span><span class="info-v">상우캠퍼스 어드민동</span></div>
@@ -650,12 +750,12 @@
     </div>
   </div>
 
-  <!-- 4. 인원추가 (다중 선택) -->
+  <!-- 4. 노트북추가 (다중 선택) -->
   <div class="card">
     <div class="card-head">
       <div class="card-title">
         <span class="title-bar orange"></span>
-        인원추가
+        노트북추가
         <span class="card-sub">· 복수 선택 가능</span>
       </div>
       <span class="card-link" onclick="toggleAll()">전체 선택 / 해제</span>
@@ -663,7 +763,7 @@
     <div class="card-body">
       <div class="chip-grid" id="gridMulti"></div>
       <div class="add-person-wrap">
-        <button class="btn-add-toggle" id="btnAddToggle" onclick="toggleAddForm()">＋ 새 인원 추가</button>
+        <button class="btn-add-toggle" id="btnAddToggle" onclick="toggleAddForm()" disabled style="opacity:0.35;cursor:not-allowed">＋ 새 인원 추가</button>
         <div class="add-person-form" id="addPersonForm">
           <div class="add-person-row">
             <input class="inp-add" type="text" id="addName" placeholder="이름 (필수)" />
@@ -685,7 +785,6 @@
         <span id="runIcon">▶</span>
         <span id="runText">자동 입력 시작</span>
       </button>
-      <button class="btn-copy" onclick="copyScript()" style="display:none">📋 콘솔 스크립트 복사 (직접 확인용)</button>
       <div class="how-to" id="howTo">
         <strong>사용 방법</strong><br>
         1. <a href="https://ims.dbhitek.com" target="_blank" style="color:#0369A1">ims.dbhitek.com</a> 접속<br>
@@ -713,15 +812,13 @@
     <div class="err-box" id="errBox"></div>
 
     <div class="shot-wrap" id="shotVisitors">
-      <div class="shot-label">① 방문객 정보 입력 완료</div>
-      <img class="shot-img" id="shotImgVisitors" onclick="window.open(this.src)" title="클릭해서 크게 보기" />
-      <div class="shot-note">방문객 정보가 입력된 상태입니다.</div>
+      <div class="shot-label">입력 내용 확인</div>
+      <pre class="field-log" id="fieldLogVisitors"></pre>
     </div>
 
     <div class="shot-wrap" id="shotEquipment">
       <div class="shot-label">② 휴대물품 입력 완료</div>
-      <img class="shot-img" id="shotImgEquipment" onclick="window.open(this.src)" title="클릭해서 크게 보기" />
-      <div class="shot-note">실제 신청 버튼은 눌리지 않았습니다. 확인 후 직접 제출하세요.</div>
+      <pre class="field-log" id="fieldLogEquipment"></pre>
     </div>
 
     <div class="shot-wrap" id="shotError">
@@ -734,6 +831,15 @@
   <p class="footer" style="margin-top:4px; font-size:11px; color:var(--muted); opacity:.5;">made by JBYE</p>
 </div>
 
+<aside class="history-panel">
+  <div class="history-head">
+    <span class="history-head-title">신청 이력</span>
+  </div>
+  <div class="history-list" id="historyList"></div>
+</aside>
+
+</div>
+
 <!-- Changelog modal -->
 <div class="changelog-backdrop" id="changelogBackdrop" onclick="toggleChangelog(event)">
   <div class="changelog-box">
@@ -741,6 +847,25 @@
       업데이트 내역
       <button class="changelog-close" onclick="toggleChangelog()">✕</button>
     </div>
+
+    <div class="cl-version">
+      <span class="cl-tag orange">v3.1</span>
+      <span class="cl-date">2026-05-14</span>
+    </div>
+    <ul class="cl-items">
+      <li>담당자 선택 기능 추가 (채명주 외 7명)</li>
+    </ul>
+
+    <div class="cl-version">
+      <span class="cl-tag orange">v3.0</span>
+      <span class="cl-date">2026-05-14</span>
+    </div>
+    <ul class="cl-items">
+      <li>신청 이력 패널 추가 (날짜/인원/노트북)</li>
+      <li>실제 신청 버튼 활성화 (XPath 기반)</li>
+      <li>확인 팝업 자동 처리</li>
+      <li>입력값 텍스트 확인 기능 추가</li>
+    </ul>
 
     <div class="cl-version">
       <span class="cl-tag orange">v2.5</span>
@@ -801,18 +926,18 @@
 
 <script>
   const VISITORS_DATA = [
-    { name: "한준석", birth: "1977-01-03", laptop_sn: null },
-    { name: "최선국", birth: "1979-05-03", laptop_sn: "PF35R8Y6(SK)" },
-    { name: "조영택", birth: "1985-01-20", laptop_sn: "PF410726(YT)" },
-    { name: "신영재", birth: "1985-04-05", laptop_sn: "PF46LP6P(YJ)" },
-    { name: "이영훈", birth: "1988-06-20", laptop_sn: "PF123456(YH)" },
-    { name: "강정규", birth: "1990-03-07", laptop_sn: "PF3AWQP1(JG)" },
-    { name: "변정호", birth: "1990-08-12", laptop_sn: "PF46CER0(JH)" },
-    { name: "김시준", birth: "1992-01-08", laptop_sn: "PG46FEY5(SJ)" },
-    { name: "권이건", birth: "1994-12-10", laptop_sn: "PF3YV1PX(LK)" },
-    { name: "장덕수", birth: "1996-04-14", laptop_sn: "5CG4255D3R(DS)" },
-    { name: "백한빈", birth: "1996-08-31", laptop_sn: "PF3YAA2F(HB)" },
-    { name: "박찬순", birth: "1999-04-07", laptop_sn: "PF4SLTEF(CS)" },
+    { name: "한준석", birth: "1977-01-03", phone: "010-2299-0880", laptop_sn: null },
+    { name: "최선국", birth: "1979-05-03", phone: "010-9431-4524", laptop_sn: "PF35R8Y6(SK)" },
+    { name: "조영택", birth: "1985-01-20", phone: "010-9104-1369", laptop_sn: "PF410726(YT)" },
+    { name: "신영재", birth: "1985-04-05", phone: "010-9506-9327", laptop_sn: "PF46LP6P(YJ)" },
+    { name: "이영훈", birth: "1988-06-20", phone: "010-5113-9792", laptop_sn: "PF123456(YH)" },
+    { name: "강정규", birth: "1990-03-07", phone: "010-9747-2803", laptop_sn: "PF3AWQP1(JG)" },
+    { name: "변정호", birth: "1990-08-12", phone: "010-3802-0065", laptop_sn: "PF46CER0(JH)" },
+    { name: "김시준", birth: "1992-01-08", phone: "010-2785-8026", laptop_sn: "PG46FEY5(SJ)" },
+    { name: "권이건", birth: "1994-12-10", phone: "010-7184-3984", laptop_sn: "PF3YV1PX(LK)" },
+    { name: "장덕수", birth: "1996-04-14", phone: "010-9377-7379", laptop_sn: "5CG4255D3R(DS)" },
+    { name: "백한빈", birth: "1996-08-31", phone: "010-8669-3444", laptop_sn: "PF3YAA2F(HB)" },
+    { name: "박찬순", birth: "1999-04-07", phone: "010-5815-6911", laptop_sn: "PF4SLTEF(CS)" },
   ];
 
   // 방문신청: 라디오 (단일)
@@ -828,7 +953,7 @@
     document.getElementById('gridSingle').appendChild(el);
   });
 
-  // 인원추가: 체크박스 (다중)
+  // 노트북추가: 체크박스 (다중)
   VISITORS_DATA.forEach((v, idx) => {
     const el = document.createElement('label');
     el.className = 'chip';
@@ -948,13 +1073,56 @@
 
   function showShot(key, b64) {
     const map = {
-      visitors:  { wrap: 'shotVisitors',  img: 'shotImgVisitors'  },
-      equipment: { wrap: 'shotEquipment', img: 'shotImgEquipment' },
-      submit_result: { wrap: 'shotEquipment', img: 'shotImgEquipment' },
-      error:     { wrap: 'shotError',     img: 'shotImgError'     },
+      error: { wrap: 'shotError', img: 'shotImgError' },
     };
-    const ids = map[key] || map.error;
-    document.getElementById(ids.img).src = 'data:image/jpeg;base64,' + b64;
+    const ids = map[key];
+    if (!ids) return;
+    const img = document.getElementById(ids.img);
+    if (b64) {
+      img.src = 'data:image/jpeg;base64,' + b64;
+      img.style.display = '';
+    } else {
+      img.style.display = 'none';
+    }
+    const wrap = document.getElementById(ids.wrap);
+    wrap.className = 'shot-wrap show';
+    setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+  }
+
+  function showFields(key, fields) {
+    const map = {
+      visitors:  { log: 'fieldLogVisitors',  wrap: 'shotVisitors'  },
+      equipment: { log: 'fieldLogEquipment', wrap: 'shotEquipment' },
+    };
+    const ids = map[key];
+    if (!ids) return;
+    let text = '';
+    if (key === 'visitors') {
+      if (fields && fields.visit) {
+        const v = fields.visit;
+        text += '── 방문신청 정보 ──────────────\n';
+        text += `출입지역  : ${v.location || '-'}\n`;
+        text += `방문 시작 : ${v.startDate || '-'}\n`;
+        text += `방문 종료 : ${v.endDate || '-'}\n`;
+        text += `담당자    : ${v.contact || '-'}\n`;
+        text += `출입지점  : ${v.place || '-'}\n`;
+        text += `방문목적  : ${v.purpose || '-'}\n`;
+        text += '\n';
+      }
+      const visitors = fields && fields.visitors ? fields.visitors : (Array.isArray(fields) ? fields : []);
+      if (visitors.length > 0) {
+        text += '── 방문객 정보 ────────────────\n';
+        text += visitors.map((v, i) =>
+          `[${i + 1}] 이름: ${v.name || '-'}\n    생년월일: ${v.birth || '-'}\n    회사명: ${v.company || '-'}\n    휴대전화: ${v.phone || '-'}`
+        ).join('\n\n');
+      }
+    } else if (key === 'equipment' && Array.isArray(fields)) {
+      text += '── 휴대물품 정보 ──────────────\n';
+      text += fields.map((f, i) =>
+        `[${i + 1}] 품목: ${f.item || '-'}   S/N: ${f.sn || '-'}   수량: ${f.qty || '-'}`
+      ).join('\n');
+    }
+    document.getElementById(ids.log).textContent = text || '(데이터 없음)';
     const wrap = document.getElementById(ids.wrap);
     wrap.className = 'shot-wrap show';
     setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth' }), 100);
@@ -968,6 +1136,46 @@
     tog.textContent = open ? '▼ 오류 상세 보기' : '▲ 오류 상세 닫기';
   }
 
+  // ── 신청 이력 ──────────────────────────────
+  const HISTORY_KEY = 'dbvisit_history';
+
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; }
+  }
+
+  function addHistoryEntry(names, laptops) {
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const time = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const list = loadHistory();
+    list.unshift({ time, names, laptops });
+    if (list.length > 100) list.pop();
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const list = loadHistory();
+    const el = document.getElementById('historyList');
+    if (!list.length) {
+      el.innerHTML = '<div class="history-empty">신청 이력이 없습니다</div>';
+      return;
+    }
+    el.innerHTML = list.map(e => `
+      <div class="history-entry">
+        <div class="history-time">${e.time}</div>
+        <div class="history-names">${e.names}</div>
+        ${e.laptops ? `<div class="history-laptop">💻 ${e.laptops}</div>` : ''}
+      </div>`).join('');
+  }
+
+  function clearHistory() {
+    if (!confirm('이력을 모두 삭제할까요?')) return;
+    localStorage.removeItem(HISTORY_KEY);
+    renderHistory();
+  }
+  // ────────────────────────────────────────────
+
   function resetUI() {
     document.getElementById('statusEl').className = 'status';
     document.getElementById('errToggle').className = 'err-toggle';
@@ -975,6 +1183,8 @@
     ['shotVisitors', 'shotEquipment', 'shotError'].forEach(id => {
       document.getElementById(id).className = 'shot-wrap';
     });
+    document.getElementById('fieldLogVisitors').textContent = '';
+    document.getElementById('fieldLogEquipment').textContent = '';
     setProgress(null);
   }
 
@@ -986,8 +1196,9 @@
     if (!selected) { setStatus('ng', '⚠', '방문객을 선택해주세요.'); return; }
     if (!start)    { setStatus('ng', '⚠', '방문 시작일을 선택해주세요.'); return; }
 
-    const singleIndex  = selected.single ? VISITORS_DATA.indexOf(selected.single) : null;
-    const extraIndices = selected.multi.map(v => VISITORS_DATA.indexOf(v)).filter(i => i >= 0);
+    const singleIndex   = selected.single ? VISITORS_DATA.indexOf(selected.single) : null;
+    const extraIndices  = selected.multi.map(v => VISITORS_DATA.indexOf(v)).filter(i => i >= 0);
+    const laptopIndices = selected.laptopAll.map(v => VISITORS_DATA.indexOf(v)).filter(i => i >= 0);
 
     const btn  = document.getElementById('btnRun');
     const icon = document.getElementById('runIcon');
@@ -1002,7 +1213,7 @@
       const res = await fetch('/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ start, end, singleIndex, extraIndices }),
+        body: JSON.stringify({ start, end, singleIndex, extraIndices, laptopIndices, managerName: document.getElementById('managerSelect').value }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -1025,6 +1236,20 @@
             if (ev.ok) {
               setProgress(ev.submitOk ? '신청 완료' : '신청 버튼 미발견', ev.step, ev.total);
               setStatus(ev.submitOk ? 'ok' : 'ng', ev.submitOk ? '✓' : '✕', ev.msg || '');
+              if (ev.submitOk) {
+                const sel = getSelectedVisitors();
+                const names = sel ? [sel.single, ...sel.multi].filter(Boolean).map(v => v.name).join(', ') : '';
+                const laptops = sel ? sel.laptopAll.filter(v => v && v.laptop_sn).map(v => v.laptop_sn).join(', ') : '';
+                addHistoryEntry(names, laptops);
+              }
+              {
+                const info = ev.afterSubmit || { url: '(페이지 이동됨)', alerts: [], body: '' };
+                const box = document.getElementById('errBox');
+                box.textContent = `[신청 후 페이지 상태]\nURL: ${info.url}\n알림: ${info.alerts.join(' / ') || '없음'}\n페이지 텍스트: ${info.body || '(없음)'}`;
+                document.getElementById('errToggle').className = 'err-toggle show';
+                document.getElementById('errToggle').textContent = '▼ 신청 후 상태 보기';
+                showShot('submit_result', null);
+              }
               showResultPopup(ev.submitOk);
             } else {
               setProgress(null);
@@ -1037,7 +1262,12 @@
           } else {
             setProgress(ev.msg, ev.step, ev.total);
           }
-          if (ev.screenshot && ev.shotKey) showShot(ev.shotKey, ev.screenshot);
+          if (ev.screenshot && ev.shotKey) {
+            showShot(ev.shotKey, ev.screenshot);
+          }
+          if (ev.fields && ev.shotKey) {
+            showFields(ev.shotKey, ev.fields);
+          }
         }
       }
     } catch (e) {
@@ -1056,11 +1286,10 @@
     const radio = document.querySelector('input[name="visitor"]:checked');
     const multiChecked = Array.from(document.querySelectorAll('input[name="visitorMulti"]:checked'));
     const single = radio ? VISITORS_DATA[parseInt(radio.value, 10)] : null;
-    const multi  = multiChecked
-      .map(c => VISITORS_DATA[parseInt(c.value, 10)])
-      .filter(v => !single || v.name !== single.name);
+    const laptopAll = multiChecked.map(c => VISITORS_DATA[parseInt(c.value, 10)]);
+    const multi = laptopAll.filter(v => !single || v.name !== single.name);
     if (!single && multi.length === 0) return null;
-    return { single, multi };
+    return { single, multi, laptopAll };
   }
 
   function copyScript() {
@@ -1068,7 +1297,7 @@
     const end   = document.getElementById('endDate').value || start;
     const selected = getSelectedVisitors();
     if (!selected) { setStatus('ng', '⚠', '방문객을 선택해주세요.'); return; }
-    const script = buildConsoleScript(selected.single, selected.multi, start, end);
+    const script = buildConsoleScript(selected.single, selected.multi, selected.laptopAll, start, end);
     navigator.clipboard.writeText(script)
       .then(() => {
         showToast('스크립트 복사 완료!');
@@ -1076,12 +1305,14 @@
       });
   }
 
-  function buildConsoleScript(singleVisitor, multiVisitors, startDate, endDate) {
+  function buildConsoleScript(singleVisitor, multiVisitors, laptopVisitors, startDate, endDate) {
     const visitorJson = JSON.stringify(singleVisitor);
     const extraJson   = JSON.stringify(multiVisitors);
+    const laptopJson  = JSON.stringify(laptopVisitors || multiVisitors);
     return `(async () => {
   const VISITOR = ${visitorJson};
   const EXTRA = ${extraJson};
+  const LAPTOP = ${laptopJson};
   const V = [VISITOR, ...EXTRA].filter(Boolean);
   const INFO = {
     LOCATION_CODE: "3000",
@@ -1105,13 +1336,9 @@
   const qs    = n => Array.from(document.querySelectorAll('input,select,textarea')).find(e => e.name === n);
   const qsAll = n => Array.from(document.querySelectorAll('input,select,textarea')).filter(e => e.name === n);
 
-  document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-    const p = cb.closest('label,tr,li,div') || cb.parentElement;
-    const t = p ? p.innerText : '';
-    if (!t.includes('(선택)') && !t.includes('선택사항') &&
-        (cb.required || t.includes('(필수)') || t.includes('필수항목')) && !cb.checked) cb.click();
-  });
-  await new Promise(r => setTimeout(r, 200));
+  // 전체 동의 체크
+  document.querySelectorAll('input[type="checkbox"]').forEach(cb => { if (!cb.checked) cb.click(); });
+  await new Promise(r => setTimeout(r, 300));
 
   setVal(qs('Location'), INFO.LOCATION_CODE);
   await new Promise(r => setTimeout(r, 400));
@@ -1164,13 +1391,23 @@
     if (confirmBtn) { confirmBtn.click(); await new Promise(r => setTimeout(r, 500)); }
     const cos = qsAll('CompanyName[]');
     setVal(cos[i], INFO.VISITOR_COMPANY);
+    const visitorRow = births[i] && (births[i].closest('tr') || births[i].closest('div'));
+    const phoneField = visitorRow && Array.from(visitorRow.querySelectorAll('input,textarea')).find(e =>
+      /phone|mobile|hp|tel/i.test(e.name)
+    );
+    if (phoneField && V[i].phone) setVal(phoneField, V[i].phone);
   }
 
-  const extraWithLaptop = EXTRA.filter(v => v.laptop_sn);
+  const extraWithLaptop = LAPTOP.filter(v => v && v.laptop_sn);
   if (extraWithLaptop.length > 0) {
     if (typeof goCarryItem === 'function') goCarryItem(0);
     await new Promise(r => setTimeout(r, 1500));
     for (let i = 0; i < extraWithLaptop.length; i++) {
+      const expected = i + 1;
+      for (let w = 0; w < 10; w++) {
+        if (document.querySelectorAll('input[name="ItemName"]').length >= expected) break;
+        await new Promise(r => setTimeout(r, 300));
+      }
       const allNames = document.querySelectorAll('input[name="ItemName"]');
       const itemNameEl = allNames[allNames.length - 1];
       if (itemNameEl) {
@@ -1187,6 +1424,13 @@
       }
     }
   }
+
+  // (선택) 동의 해제
+  document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    const p = cb.closest('label,tr,li,div') || cb.parentElement;
+    const t = p ? p.innerText : '';
+    if ((t.includes('(선택)') || t.includes('선택사항')) && cb.checked) cb.click();
+  });
 
   console.log('✅ 입력 완료:', V.map(v=>v.name).join(', '));
   setTimeout(() => {
@@ -1227,6 +1471,7 @@
   }
 
   checkHealth();
+  renderHistory();
 </script>
 </body>
 </html>
