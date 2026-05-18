@@ -9,3 +9,7 @@ binding = "ASSETS"
 
 [browser]
 binding = "MY_BROWSER"
+
+[[kv_namespaces]]
+binding = "HISTORY"
+id = "9b8e00ee11d14a40bc6514f631deed78"

@@ -669,7 +669,7 @@
 <header class="app-header">
   <span class="h-badge">DB HiTek</span>
   <span class="h-title">방문신청 자동화</span>
-  <span class="h-version" onclick="toggleChangelog()">v3.1</span>
+  <span class="h-version" onclick="toggleChangelog()">v3.2</span>
   <div class="h-right">
     <span class="h-dot" id="hDot"></span>
     <span class="h-status" id="hStatus">-</span>
@@ -714,6 +714,15 @@
     <div class="card-body" style="padding-top:10px; padding-bottom:6px;">
       <div class="info-rows">
         <div class="info-row">
+          <span class="info-k">출입지역</span>
+          <span class="info-v">
+            <select id="locationSelect" style="font-family:inherit;font-size:14px;font-weight:500;color:#1A2740;background:#F4F7FC;border:1.5px solid #C8D3E8;border-radius:6px;padding:3px 8px;cursor:pointer;outline:none;" onchange="onLocationChange()">
+              <option value="sangwoo" selected>상우캠퍼스 어드민동</option>
+              <option value="bucheon">부천캠퍼스 Fab동</option>
+            </select>
+          </span>
+        </div>
+        <div class="info-row">
           <span class="info-k">담당자</span>
           <span class="info-v">
             <select id="managerSelect" style="font-family:inherit;font-size:14px;font-weight:500;color:#1A2740;background:#F4F7FC;border:1.5px solid #C8D3E8;border-radius:6px;padding:3px 8px;cursor:pointer;outline:none;">
@@ -728,9 +737,8 @@
             </select>
           </span>
         </div>
-        <div class="info-row"><span class="info-k">부서</span><span class="info-v">제조기술1팀 (Fab2)</span></div>
+        <div class="info-row"><span class="info-k">부서</span><span class="info-v" id="deptDisplay">제조기술1팀 (Fab2)</span></div>
         <div class="info-row"><span class="info-k">소속</span><span class="info-v">ASML</span></div>
-        <div class="info-row"><span class="info-k">출입지역</span><span class="info-v">상우캠퍼스 어드민동</span></div>
         <div class="info-row"><span class="info-k">방문목적</span><span class="info-v">공사/수리/Setup</span></div>
       </div>
     </div>
@@ -849,6 +857,19 @@
     </div>
 
     <div class="cl-version">
+      <span class="cl-tag orange">v3.2</span>
+      <span class="cl-date">2026-05-18</span>
+    </div>
+    <ul class="cl-items">
+      <li>출입지역 선택 추가 (상우캠퍼스 어드민동 / 부천캠퍼스 Fab동)</li>
+      <li>출입지역별 담당자·부서 자동 연동</li>
+      <li>신청 전 확인 모달 추가</li>
+      <li>신청 이력 공유 저장 (Cloudflare KV)</li>
+      <li>이력 표시 항목 확장 (신청시간·방문기간·인원·노트북)</li>
+      <li>방문 날짜 자동 설정 (다음 영업일)</li>
+    </ul>
+
+    <div class="cl-version">
       <span class="cl-tag orange">v3.1</span>
       <span class="cl-date">2026-05-14</span>
     </div>
@@ -913,6 +934,19 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- 방문신청 확인 모달 -->
+<div id="confirmBackdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:40px 48px;text-align:center;max-width:360px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+    <div style="font-size:48px;margin-bottom:16px;">📋</div>
+    <div style="font-size:20px;font-weight:700;margin-bottom:8px;color:#18243C;">방문신청 하시겠습니까?</div>
+    <div id="confirmMsg" style="font-size:13px;color:#6B7A9A;margin-bottom:28px;line-height:1.6;"></div>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <button onclick="confirmCancel()" style="background:#F0F3FA;color:#3A4A6B;border:none;border-radius:8px;padding:12px 32px;font-size:15px;font-weight:600;cursor:pointer;">아니오</button>
+      <button onclick="confirmOk()" style="background:#00854A;color:#fff;border:none;border-radius:8px;padding:12px 32px;font-size:15px;font-weight:600;cursor:pointer;">예</button>
+    </div>
+  </div>
+</div>
 
 <!-- 신청 결과 팝업 -->
 <div id="resultBackdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none;align-items:center;justify-content:center;">
@@ -1027,7 +1061,18 @@
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
-  const today = localToday();
+
+  function nextWorkday() {
+    const d = new Date();
+    const day = d.getDay(); // 0=일,1=월,2=화,3=수,4=목,5=금,6=토
+    const addDays = day === 0 || day === 5 || day === 6
+      ? (8 - day) % 7 || 7  // 금→3, 토→2, 일→1
+      : 1;
+    d.setDate(d.getDate() + addDays);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  const today = nextWorkday();
   document.getElementById('startDate').value = today;
   document.getElementById('endDate').value = today;
   document.getElementById('startDate').addEventListener('change', function () {
@@ -1137,41 +1182,42 @@
   }
 
   // ── 신청 이력 ──────────────────────────────
-  const HISTORY_KEY = 'dbvisit_history';
-
-  function loadHistory() {
-    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; }
-  }
-
-  function addHistoryEntry(names, laptops) {
+  async function addHistoryEntry(names, laptops, startDate, endDate) {
     const now = new Date();
     const pad = n => String(n).padStart(2, '0');
     const time = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    const list = loadHistory();
-    list.unshift({ time, names, laptops });
-    if (list.length > 100) list.pop();
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+    const period = endDate && endDate !== startDate ? `${startDate} ~ ${endDate}` : startDate;
+    await fetch('/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ time, names, laptops, period }),
+    });
     renderHistory();
   }
 
-  function renderHistory() {
-    const list = loadHistory();
+  async function renderHistory() {
     const el = document.getElementById('historyList');
-    if (!list.length) {
-      el.innerHTML = '<div class="history-empty">신청 이력이 없습니다</div>';
-      return;
+    try {
+      const list = await fetch('/history').then(r => r.json());
+      if (!list.length) {
+        el.innerHTML = '<div class="history-empty">신청 이력이 없습니다</div>';
+        return;
+      }
+      el.innerHTML = list.map(e => `
+        <div class="history-entry">
+          <div class="history-time">🕐 ${e.time}</div>
+          ${e.period ? `<div class="history-laptop">📅 ${e.period}</div>` : ''}
+          <div class="history-names">👤 ${e.names}</div>
+          ${e.laptops ? `<div class="history-laptop">💻 ${e.laptops}</div>` : ''}
+        </div>`).join('');
+    } catch {
+      el.innerHTML = '<div class="history-empty">이력을 불러오지 못했습니다</div>';
     }
-    el.innerHTML = list.map(e => `
-      <div class="history-entry">
-        <div class="history-time">${e.time}</div>
-        <div class="history-names">${e.names}</div>
-        ${e.laptops ? `<div class="history-laptop">💻 ${e.laptops}</div>` : ''}
-      </div>`).join('');
   }
 
-  function clearHistory() {
+  async function clearHistory() {
     if (!confirm('이력을 모두 삭제할까요?')) return;
-    localStorage.removeItem(HISTORY_KEY);
+    await fetch('/history', { method: 'DELETE' });
     renderHistory();
   }
   // ────────────────────────────────────────────
@@ -1188,6 +1234,18 @@
     setProgress(null);
   }
 
+  let _pendingRunArgs = null;
+
+  function confirmOk() {
+    document.getElementById('confirmBackdrop').style.display = 'none';
+    if (_pendingRunArgs) { _doRun(_pendingRunArgs); _pendingRunArgs = null; }
+  }
+
+  function confirmCancel() {
+    document.getElementById('confirmBackdrop').style.display = 'none';
+    _pendingRunArgs = null;
+  }
+
   async function runAuto() {
     const start = document.getElementById('startDate').value;
     const end   = document.getElementById('endDate').value || start;
@@ -1199,7 +1257,17 @@
     const singleIndex   = selected.single ? VISITORS_DATA.indexOf(selected.single) : null;
     const extraIndices  = selected.multi.map(v => VISITORS_DATA.indexOf(v)).filter(i => i >= 0);
     const laptopIndices = selected.laptopAll.map(v => VISITORS_DATA.indexOf(v)).filter(i => i >= 0);
+    const managerName   = document.getElementById('managerSelect').value;
 
+    const names = [selected.single, ...selected.multi].filter(Boolean).map(v => v.name).join(', ');
+    const dateRange = end && end !== start ? `${start} ~ ${end}` : start;
+    document.getElementById('confirmMsg').innerHTML =
+      `<b>${names}</b><br>${dateRange}<br>담당자: ${managerName}`;
+    _pendingRunArgs = { start, end, singleIndex, extraIndices, laptopIndices, managerName };
+    document.getElementById('confirmBackdrop').style.display = 'flex';
+  }
+
+  async function _doRun({ start, end, singleIndex, extraIndices, laptopIndices, managerName }) {
     const btn  = document.getElementById('btnRun');
     const icon = document.getElementById('runIcon');
     const text = document.getElementById('runText');
@@ -1213,7 +1281,7 @@
       const res = await fetch('/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ start, end, singleIndex, extraIndices, laptopIndices, managerName: document.getElementById('managerSelect').value }),
+        body: JSON.stringify({ start, end, singleIndex, extraIndices, laptopIndices, managerName }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -1240,7 +1308,7 @@
                 const sel = getSelectedVisitors();
                 const names = sel ? [sel.single, ...sel.multi].filter(Boolean).map(v => v.name).join(', ') : '';
                 const laptops = sel ? sel.laptopAll.filter(v => v && v.laptop_sn).map(v => v.laptop_sn).join(', ') : '';
-                addHistoryEntry(names, laptops);
+                addHistoryEntry(names, laptops, start, end);
               }
               {
                 const info = ev.afterSubmit || { url: '(페이지 이동됨)', alerts: [], body: '' };
@@ -1441,6 +1509,27 @@
     if (btn) { btn.scrollIntoView({ behavior: 'smooth', block: 'center' }); btn.click(); }
   }, 1000);
 })();`;
+  }
+
+  const LOCATION_CONFIG = {
+    sangwoo: {
+      managers: ['채명주','이영휘','서형석','윤여철','박종우','권준혁','김재덕','박대용'],
+      dept: '제조기술1팀 (Fab2)',
+    },
+    bucheon: {
+      managers: ['안현진'],
+      dept: '제조기술1팀 (Fab1)',
+    },
+  };
+
+  function onLocationChange() {
+    const loc = document.getElementById('locationSelect').value;
+    const cfg = LOCATION_CONFIG[loc];
+    const sel = document.getElementById('managerSelect');
+    sel.innerHTML = cfg.managers.map((m, i) =>
+      `<option value="${m}"${i === 0 ? ' selected' : ''}>${m}</option>`
+    ).join('');
+    document.getElementById('deptDisplay').textContent = cfg.dept;
   }
 
   function toggleChangelog(e) {

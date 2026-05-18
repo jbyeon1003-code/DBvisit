@@ -243,6 +243,27 @@ export default {
       return jsonRes({ ok: true, browser_ok: !!env.MY_BROWSER, assets_ok: !!env.ASSETS });
     }
 
+    // ── /history ─────────────────────────────────────────────────
+    if (path === "/history") {
+      if (request.method === "GET") {
+        const raw = await env.HISTORY.get("list");
+        return jsonRes(JSON.parse(raw || "[]"));
+      }
+      if (request.method === "POST") {
+        const entry = await request.json();
+        const raw = await env.HISTORY.get("list");
+        const list = JSON.parse(raw || "[]");
+        list.unshift(entry);
+        if (list.length > 100) list.pop();
+        await env.HISTORY.put("list", JSON.stringify(list));
+        return jsonRes({ ok: true });
+      }
+      if (request.method === "DELETE") {
+        await env.HISTORY.put("list", "[]");
+        return jsonRes({ ok: true });
+      }
+    }
+
     // ── /debug ───────────────────────────────────────────────────
     if (path === "/debug") {
       let browser = null, page = null;
