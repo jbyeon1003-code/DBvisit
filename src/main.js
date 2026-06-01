@@ -273,6 +273,16 @@ export default {
       return jsonRes({ ok: true, browser_ok: !!env.MY_BROWSER, assets_ok: !!env.ASSETS });
     }
 
+    // ── /confirm ─────────────────────────────────────────────────
+    if (path === "/confirm") {
+      const sessionId = url.searchParams.get("session");
+      const ok = url.searchParams.get("ok") === "true";
+      if (sessionId) {
+        await env.HISTORY.put(`_confirm_${sessionId}`, ok ? "ok" : "cancel", { expirationTtl: 120 });
+      }
+      return jsonRes({ ok: true });
+    }
+
     // ── /history ─────────────────────────────────────────────────
     if (path === "/history") {
       if (request.method === "GET") {
@@ -668,6 +678,24 @@ export default {
             await send(4, "휴대물품 입력 완료");
           }
           // [스크린샷 꺼짐 — 켜달라고 하면 다시 활성화]
+
+          // 사용자 최종 확인 대기
+          const confirmSessionId = crypto.randomUUID();
+          await env.HISTORY.put(`_confirm_${confirmSessionId}`, 'waiting', { expirationTtl: 120 });
+          await send(5, '방문신청 하시겠습니까?', { waitingConfirm: true, sessionId: confirmSessionId });
+
+          let userConfirmed = false;
+          for (let i = 0; i < 60; i++) {
+            await sleep(1000);
+            const val = await env.HISTORY.get(`_confirm_${confirmSessionId}`);
+            if (val === 'ok') { userConfirmed = true; break; }
+            if (val === 'cancel') { userConfirmed = false; break; }
+          }
+
+          if (!userConfirmed) {
+            await send(5, '취소 또는 시간 초과', { done: true, ok: false, msg: '방문신청이 취소되었습니다.' });
+            return;
+          }
 
           // 신청 버튼 클릭 (SUBMIT_ENABLED = false 이면 스킵)
           stage = "신청 버튼 클릭";

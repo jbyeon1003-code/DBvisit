@@ -1234,16 +1234,22 @@
     setProgress(null);
   }
 
-  let _pendingRunArgs = null;
+  let _pendingConfirmSession = null;
 
-  function confirmOk() {
+  async function confirmOk() {
     document.getElementById('confirmBackdrop').style.display = 'none';
-    if (_pendingRunArgs) { _doRun(_pendingRunArgs); _pendingRunArgs = null; }
+    if (_pendingConfirmSession) {
+      await fetch(`/confirm?session=${_pendingConfirmSession}&ok=true`);
+      _pendingConfirmSession = null;
+    }
   }
 
-  function confirmCancel() {
+  async function confirmCancel() {
     document.getElementById('confirmBackdrop').style.display = 'none';
-    _pendingRunArgs = null;
+    if (_pendingConfirmSession) {
+      await fetch(`/confirm?session=${_pendingConfirmSession}&ok=false`);
+      _pendingConfirmSession = null;
+    }
   }
 
   async function runAuto() {
@@ -1259,12 +1265,7 @@
     const laptopIndices = selected.laptopAll.map(v => VISITORS_DATA.indexOf(v)).filter(i => i >= 0);
     const managerName   = document.getElementById('managerSelect').value;
 
-    const names = [selected.single, ...selected.multi].filter(Boolean).map(v => v.name).join(', ');
-    const dateRange = end && end !== start ? `${start} ~ ${end}` : start;
-    document.getElementById('confirmMsg').innerHTML =
-      `<b>${names}</b><br>${dateRange}<br>담당자: ${managerName}`;
-    _pendingRunArgs = { start, end, singleIndex, extraIndices, laptopIndices, managerName };
-    document.getElementById('confirmBackdrop').style.display = 'flex';
+    _doRun({ start, end, singleIndex, extraIndices, laptopIndices, managerName });
   }
 
   async function _doRun({ start, end, singleIndex, extraIndices, laptopIndices, managerName }) {
@@ -1299,6 +1300,17 @@
         for (const chunk of chunks) {
           if (!chunk.startsWith('data: ')) continue;
           let ev; try { ev = JSON.parse(chunk.slice(6)); } catch { continue; }
+
+          if (ev.waitingConfirm) {
+            _pendingConfirmSession = ev.sessionId;
+            const names = [getSelectedVisitors()?.single, ...(getSelectedVisitors()?.multi || [])].filter(Boolean).map(v => v.name).join(', ');
+            const dateRange = end && end !== start ? `${start} ~ ${end}` : start;
+            const managerName = document.getElementById('managerSelect').value;
+            document.getElementById('confirmMsg').innerHTML =
+              `<b>${names}</b><br>${dateRange}<br>담당자: ${managerName}<br><br>입력이 완료되었습니다. 방문신청 하시겠습니까?`;
+            document.getElementById('confirmBackdrop').style.display = 'flex';
+            continue;
+          }
 
           if (ev.done) {
             if (ev.ok) {
