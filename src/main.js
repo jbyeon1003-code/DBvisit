@@ -679,6 +679,16 @@ export default {
           }
           // [스크린샷 꺼짐 — 켜달라고 하면 다시 활성화]
 
+          // Teams 알림 전송 (폼 입력 완료 직후)
+          if (env.TEAMS_WEBHOOK_URL) {
+            await sendTeamsNotification(env.TEAMS_WEBHOOK_URL, {
+              startDate, endDate,
+              visitors: allVisitors,
+              managerName: managerName || INFO.MANAGER_NAME,
+              laptopVisitors,
+            });
+          }
+
           // 사용자 최종 확인 대기
           const confirmSessionId = crypto.randomUUID();
           await env.HISTORY.put(`_confirm_${confirmSessionId}`, 'waiting', { expirationTtl: 120 });
@@ -769,14 +779,6 @@ export default {
             })()`).catch(() => {});
 
             await sleep(2000);
-            if (submitOk && env.TEAMS_WEBHOOK_URL) {
-              await sendTeamsNotification(env.TEAMS_WEBHOOK_URL, {
-                startDate, endDate,
-                visitors: allVisitors,
-                managerName: managerName || INFO.MANAGER_NAME,
-                laptopVisitors,
-              });
-            }
             await send(5, submitOk ? `신청 버튼 클릭됨 (${submitBtnText})` : `신청 버튼 미발견`, {
               done: true, ok: true, submitOk,
               msg: submitOk
