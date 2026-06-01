@@ -226,6 +226,36 @@ async function launchBrowser(myBrowser, onRetry) {
   }
 }
 
+async function sendTeamsNotification(webhookUrl, { startDate, endDate, visitors, managerName, laptopVisitors }) {
+  const period = endDate && endDate !== startDate ? `${startDate} ~ ${endDate}` : startDate;
+  const bodyItems = [
+    { type: 'TextBlock', text: 'DBHiTek 방문신청 완료 ✅', size: 'Large', weight: 'Bolder', wrap: true },
+    { type: 'TextBlock', text: `방문 기간: ${period}`, wrap: true },
+    { type: 'TextBlock', text: `방문객 (${visitors.length}명): ${visitors.map(v => v.name).join(', ')}`, wrap: true },
+    { type: 'TextBlock', text: `담당자: ${managerName}`, wrap: true },
+  ];
+  if (laptopVisitors.length > 0) {
+    bodyItems.push({ type: 'TextBlock', text: `노트북: ${laptopVisitors.map(v => `${v.name}(${v.laptop_sn})`).join(', ')}`, wrap: true });
+  }
+  const card = {
+    type: 'AdaptiveCard',
+    $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+    version: '1.4',
+    body: bodyItems,
+  };
+  try {
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(card),
+    });
+    const text = await res.text();
+    console.log(`[Teams] status=${res.status} body=${text}`);
+  } catch (e) {
+    console.error(`[Teams] 전송 실패: ${e.message}`);
+  }
+}
+
 function jsonRes(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -711,6 +741,14 @@ export default {
             })()`).catch(() => {});
 
             await sleep(2000);
+            if (submitOk && env.TEAMS_WEBHOOK_URL) {
+              await sendTeamsNotification(env.TEAMS_WEBHOOK_URL, {
+                startDate, endDate,
+                visitors: allVisitors,
+                managerName: managerName || INFO.MANAGER_NAME,
+                laptopVisitors,
+              });
+            }
             await send(5, submitOk ? `신청 버튼 클릭됨 (${submitBtnText})` : `신청 버튼 미발견`, {
               done: true, ok: true, submitOk,
               msg: submitOk
